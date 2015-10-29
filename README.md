@@ -1,5 +1,5 @@
 # ![Luma HDRv](http://lumahdrv.org/img/logo_small.png) **Luma Hdrv**
-![Luma HDRv](http://lumahdrv.org/img/quote_bg.jpg)
+Project web: http://lumahdrv.org/
 
 ## General
 The [Luma HDRv](http://lumahdrv.org/) package provides libraries for
@@ -37,19 +37,19 @@ and installation section), the Luma HDRv package is built with
 different executables. In a full build, the following parts are
 included:
 
-> **libluma_encoder** -- Luma HDRv encoding library, providing function-
->                    alities for encoding and writing of HDR videos.\
-> **libluma_decoder** -- Luma HDRv decoding library, providing function-
->                    alities for decoding and reading of HDR videos.\
-> **lumaenc**         -- HDR video encoding application, for encoding HDR 
->                    frames into a HDR video.\
-> **lumadec**         -- HDR video decoding application, for decoding of
->                    HDR video into separate frames.\
-> **lumaplay**        -- Simple playback of encoded HDR videos.\
-> **test_simple_enc** -- Minimal encoding test example, to demonstrate how
->                    to use the **luma_encoder** library.\
-> **test_simple_dec** -- Minimal decoding test example, to demonstrate how
->                    to use the **luma_decoder** library.\
+* **libluma_encoder** -- Luma HDRv encoding library, providing functionalities
+                         for encoding and writing of HDR videos.
+* **libluma_decoder** -- Luma HDRv decoding library, providing functionalities
+                         for decoding and reading of HDR videos.
+* **lumaenc**         -- HDR video encoding application, for encoding HDR 
+                         frames into a HDR video.
+* **lumadec**         -- HDR video decoding application, for decoding of
+                         HDR video into separate frames.
+* **lumaplay**        -- Simple playback of encoded HDR videos.
+* **test_simple_enc** -- Minimal encoding test example, to demonstrate how
+                         to use the **luma_encoder** library.
+* **test_simple_dec** -- Minimal decoding test example, to demonstrate how
+                         to use the **luma_decoder** library.
 
 ## Compilation and installation
 Compilation is provided through CMake, and should be able to detect
@@ -63,22 +63,22 @@ build tree and compiled together with the Luma HDRv libraries.
 The provided applications are compiled if their dependencies are 
 found. The dependencies are as follows:
 
-> **libluma_encoder** and **libluma_decoder**:\
->     libvpx [provided]\
->     libmatroska [provided]\
->     libebml [provided]
+* **libluma_encoder** and **libluma_decoder**:
+   * [libvpx](http://www.webmproject.org) [provided]
+   * [libmatroska](http://www.matroska.org) [provided]
+   * [libebml](http://matroska-org.github.io/libebml) [provided]
 
-> **lumaenc** and **lumadec**:\
->     openEXR\
->     pfstools [optional]
+* **lumaenc** and **lumadec**:
+   * [openEXR](http://www.openexr.com/)
+   * [pfstools](http://pfstools.sourceforge.net) [optional]
 
-> **lumaplay**:\
->     openGL\
->     glut\
->     glew
+* **lumaplay**:
+   * [openGL](https://www.opengl.org/)
+   * [glut](https://www.opengl.org/resources/libraries/glut/)
+   * [glew](http://glew.sourceforge.net/)
 
-> **test_simple_enc** and **test_simple_dec**:\
->   openEXR
+* **test_simple_enc** and **test_simple_dec**:
+   * [openEXR](http://www.openexr.com/)
 
 #### UNIX
 For an out-of-tree build (recommended) and install, do the
@@ -157,3 +157,5 @@ Copyright (c) 2015, The LumaHDRv authors.
 All rights reserved.
 
 Luma HDRv is distributed under a BSD license. See `LICENSE` for information.
+
+![Luma HDRv](http://lumahdrv.org/img/quote_bg.jpg)
