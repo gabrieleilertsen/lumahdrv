@@ -1,0 +1,31 @@
+.TH LUMAPLAY 1
+.SH NAME
+lumaplay \- Playback a high dynamic range (HDR) video that has been encoded with \fBlumaenc\fR
+.SH SYNOPSIS
+.B lumaplay \fIFILE\fR
+.SH DESCRIPTION
+.B lumaplay
+The application provides an interface for playback of high dynamic range (HDR) 
+videos.
+
+Interaction is provided through the following commands:
+
+  Ctr+Q/Ctr+W/Esc  -  Quit application
+  Space            -  Pause video
+  s                -  Seek to position indicated by mouse pointers horizontal position.
+                      Left border of video is start of video, and right border is end 
+                      of video.
+  +/-              -  Increase/decrease exposure
+  t                -  Apply simple sigmoid tone curve
+  z                -  Show timings
+
+.SH EXAMPLES
+.TP
+\fBlumaplay\fR hdr_video.mkv
+
+Play HDR video hdr_video.mkv.
+
+.SH "SEE ALSO"
+.BR lumaenc (1)
+.BR lumadec (1)
+

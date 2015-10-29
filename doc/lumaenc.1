@@ -1,0 +1,137 @@
+.TH LUMAENC 1
+.SH NAME
+lumaenc \- Compress a sequence of high dyncamic range (HDR) frames in to a Matroska (.mkv) HDR video
+.SH SYNOPSIS
+.B lumaenc
+\fB\-\-output \fIFILE\fR
+[\fB\-\-input \fIFILE\fR]
+[\fB\-\-start-frame \fIFRAME\fR]
+[\fB\-\-end-frame \fIFRAME\fR]
+[\fIOPTIONS\fR ...]
+.SH DESCRIPTION
+.B lumaenc
+The application encodes a high dynamic range (HDR) video from a set of separate
+HDR frames. The images are transformed with a perceptual transfer function (PTF)
+to make the quantization error perceptually equally distributed over the different
+luminances. The transformed frames are then encoded using Google's VP9 video codec,
+using a high bit depth profile. Finally, the video is packaged together with all
+needed meta data in a Matroska containter.
+
+.SH OPTIONS
+.TP
+.B \-i  \fIFILE\fR, \fB\-\-input \fIFILE
+Input HDR video sequence. The frames should either be in EXR format, or piped to
+\fBlumaenc\fR from pfstools in which case this option should not be used. A range of frames
+is specified using a %d pattern togheter with the \fB--frames\fR option.
+
+.TP
+.B \-o  \fIFILE\fR, \fB\-\-output \fIFILE
+Output location of the compressed HDR video. The video is stored using the Matroska
+container, and should thus use file extension '.mkv'.
+
+.TP
+.B \-f  \fIFRAMES\fR, \fB\-\-frames \fIFRAMES
+Input frame range, formatted as startframe:step:endframe
+
+.TP
+.B \-p  \fIPROFILE\fR, \fB\-\-profile \fIPROFILE
+VP9 encoding profile:
+
+  0 : 8 bits,  422 color sub sampling
+  1 : 8 bits,  444
+  2 : 12 bits, 422 color sub sampling
+  3 : 12 bits, 444
+  
+Default value is 2.
+
+.TP
+.B \-q  \fISCALE\fR, \fB\-\-quantizer-scaling \fISCALE
+Scaling of the encoding quantization. This provides a direct control over the quality
+of the encoded video, where 0 is the best quality and 63 is the lowest quality.
+
+Default value is 2.
+
+.TP
+.B \-sc  \fISCALE\fR, \fB\-\-pre-scaling \fISCALE
+Scaling of pixels to apply before transformation and encoding. Since the perceptual
+encoding expects input to be in physical units (cd/m²), this option can be used
+to calibrate the input to the correct range.
+
+Default value is 1.
+
+.TP
+.B \-pb  \fIDEPTH\fR, \fB\-\-ptf-bitdepth \fIDEPTH
+Bit depth of the perceptual transfer function. This should be <= \fB--encoding-bitdepth\fR
+to fit the bit depth used for encoding.
+
+Default value is 11.
+
+.TP
+.B \-cb  \fIDEPTH\fR, \fB\-\-color-bitdepth \fIDEPTH
+Bit depth of the color channels. This should be <= \fB--encoding-bitdepth\fR
+to fit the bit depth used for encoding.
+
+Default value is 8.
+
+.TP
+.B \-ptf  \fIPTF\fR, \fB\-\-transfer-function \fIPTF
+The perceptual transfer function used for encoding:
+
+  PSI     :  Perceptual - Ferwerda's t.v.i.
+  PQ      :  Dolby perceptual quantizer
+  LOG     :  Logarithmic transformation
+  HDRVDP  :  Transformation function from HDR-VDP
+  LINEAR  :  Linear scaling
+
+Default is PQ.
+
+.TP
+.B \-cs  \fICS\fR, \fB\-\-color-space \fICS
+The encoder assumes the input to be in RGB. The RGB values are then transformed to
+one of the following color spaces for encoding:
+
+  LUV   :  Lu'v'
+  RGB   :  Red, green, blue
+  YCBCR :  YCbCr, BT.2020 recommendation
+  XYZ   :  CIE 1931 XYZ, with D65 reference white
+
+Default is LUV.
+
+.TP
+.B \-b  \fIRATE\fR, \fB\-\-bitrate \fIRATE
+
+.TP
+.B \-k  \fIINTERVAL\fR, \fB\-\-keyframe-interval \fIINTERVAL
+Set fixed interval between keyframes. If the interval is set to 0, the encoder
+automatically determines keyframe positions.
+
+Default is 0.
+
+.TP
+.B \-eb  \fIDEPTH\fR, \fB\-\-encoding-bitdepth \fIDEPTH
+Encode at 8 bits, or use high bit depth encoding at 10 or 12 bits.
+
+Default is 12.
+
+.TP
+.B \-l, \fB\-\-lossless
+Enable lossless encoding mode.
+
+.SH EXAMPLES
+.TP
+\fBlumaenc\fR \fB--input\fR hdr_frame_%05d.exr \fB--frames\fR 1:100 \fB--output\fR hdr_video.mkv
+
+Encode EXR frames hdr_frame_00001.exr -- hdr_frame_00100.exr into HDR video hdr_video.mkv.
+
+.TP
+\fBlumaenc\fR [...] \fB--encoding-bitdepth\fR 8 \fB--profile\fR 0 \fB--ptf-bitdepth\fR 8 \fB--color-space\fR YCBCR \fB--transfer-function\fR LOG
+
+Encode at 8 bits, in YCbCr, with logarithmic transfer function. This example is 
+possible to view in video players that support VP9 (e.g. later versions of VLC 
+and ffplay). However, quantization artifacts will be clearly visible when encoding 
+HDR at only 8 bits.
+
+.SH "SEE ALSO"
+.BR lumadec (1)
+.BR lumaplay (1)
+

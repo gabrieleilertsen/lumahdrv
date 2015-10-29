@@ -1,0 +1,12 @@
+/* config.h.in, will be populated by CMake  */
+
+#if ${HAVE_PFS}
+  #define HAVE_PFS
+#endif
+
+#if defined(_WIN32) || defined(_WIN64) 
+#define strcasecmp _stricmp 
+#define strncasecmp _strnicmp 
+#endif
+
+#define SOURCE_DIR "${PROJECT_SOURCE_DIR}"

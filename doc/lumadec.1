@@ -1,0 +1,35 @@
+.TH LUMADEC 1
+.SH NAME
+lumadec \- Decode a high dynamic range (HDR) video that has been encoded with \fBlumaenc\fR
+.SH SYNOPSIS
+.B lumadec
+\fB\-\-input \fIFILE\fR
+[\fB\-\-output \fIFILE\fR]
+[\fIOPTIONS\fR ...]
+.SH DESCRIPTION
+.B lumadec
+The application decodes a high dynamic range (HDR) video into a set of separate
+HDR frames. The settings used in the encoding are stored in the video containter
+and need not be specified for the decoding.
+
+.SH OPTIONS
+.TP
+.B \-i  \fIFILE\fR, \fB\-\-input \fIFILE
+HDR video input.
+
+.TP
+.B \-o  \fIFILE\fR, \fB\-\-input \fIFILE
+Output HDR video sequence. The frames are either stored in EXR format, or piped to
+pfstools for further processing, in which case this option should not be used. Format
+of the output frames is specified using a %d pattern.
+
+.SH EXAMPLES
+.TP
+\fBlumadec\fR \fB--input\fR hdr_video.mkv \fB--output\fR hdr_frame_%05d.exr
+
+Decode HDR video hdr_video.mkv into EXR frames at hdr_frame_%05d.exr.
+
+.SH "SEE ALSO"
+.BR lumaenc (1)
+.BR lumaplay (1)
+
