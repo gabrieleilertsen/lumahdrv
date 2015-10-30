@@ -131,6 +131,11 @@ possible to view in video players that support VP9 (e.g. later versions of VLC
 and ffplay). However, quantization artifacts will be clearly visible when encoding 
 HDR at only 8 bits.
 
+.TP
+\fBpfsin\fR frame%04d.hdr \fB--frames\fR 1:2:100 | \fBlumaenc\fR \fB-o\fR video.mkv
+
+Read the frames stored in Radiance (.hdr) format with the index 0001, 0003, 0005, ..., 0099, encode them and save the resulting video in the file video.mkv. Note that pfstools (http://pfstools.sourceforge.net/) are required for piping frames in any HDR format. 
+
 .SH "SEE ALSO"
 .BR lumadec (1)
 .BR lumaplay (1)

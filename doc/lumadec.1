@@ -29,6 +29,16 @@ of the output frames is specified using a %d pattern.
 
 Decode HDR video hdr_video.mkv into EXR frames at hdr_frame_%05d.exr.
 
+.TP
+\fBlumadec\fR \fB--input\fR hdr_video.mkv | \fBpfsout\fR hdr_frame_%05d.exr
+
+The same as above, but using pfstools to write HDR frames. Note that pfstools can write frames in variety of formats, such as RGBE Radiance (.hdr extension) or uncompressed PFM files (.pfm extension). pfstools (http://pfstools.sourceforge.net/) must be installed for this command to work.
+
+.TP
+\fBlumadec\fR \fB--input\fR hdr_video.mkv | \fBpfsview\fR
+
+View the video frame-by-frame using pfsview.
+
 .SH "SEE ALSO"
 .BR lumaenc (1)
 .BR lumaplay (1)
