@@ -6,7 +6,7 @@ SET(_pfs_SEARCH_DIRS
   /sw # Fink
   /opt/local # DarwinPorts
   /opt/csw # Blastwave
-  "C:/Program Files (x86)/OpenEXR" # Windows
+#  "C:/Program Files (x86)/OpenEXR" # Windows
 )
 
 FIND_PATH(PFS_INCLUDE_DIR

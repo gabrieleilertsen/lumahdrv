@@ -129,6 +129,15 @@ if ( NOT VPX_FOUND )
     else ()
         message( WARNING "VPX library not found. Static VPX library will be built...")
         include(ExternalProject)
+
+        find_program (YASM_EXECUTABLE yasm)
+        if( YASM_EXECUTABLE )
+	  message( "Using yasm: ${YASM_EXECUTABLE}" )
+        else( YASM_EXECUTABLE )
+	  message( SEND_ERROR "yasm not found. You need to install yasm to compile the VPX library." )
+        endif( YASM_EXECUTABLE )
+        
+        
         ExternalProject_Add(
             libvpx
             SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/libvpx
