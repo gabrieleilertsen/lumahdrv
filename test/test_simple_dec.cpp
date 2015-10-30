@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
     char *hdrFrames = argv[2];
     
     LumaDecoder decoder(inputFile);
-    Frame *frame;
+    LumaFrame *frame;
     
     char str[500];
     int f;
@@ -23,10 +23,11 @@ int main(int argc, char* argv[])
     {
         printf("Decoding frame %d.\n", f);
         
-        if (!decoder.run())
-            break;
+        frame = decoder.decode();
         
-        frame = decoder.get();
+        // No frame available -> end of file
+        if (frame == NULL)
+            break;
         
         sprintf(str, hdrFrames == NULL ? "output_%05d.exr" : hdrFrames, f);
         printf("NN = %d, Print --> %d\n", frame->buffer == NULL, ExrInterface::writeFrame(str, *frame));

@@ -251,7 +251,7 @@ void LumaQuantizer::setMappingPsi()
         m_mapping[i] = mapping[i];
 }
 
-bool LumaQuantizer::transformColorSpace(Frame *frame, bool toCs, float sc)
+bool LumaQuantizer::transformColorSpace(LumaFrame *frame, bool toCs, float sc)
 {
     if (toCs)
     {
@@ -493,5 +493,3 @@ float LumaQuantizer::transformLog(float val, bool encode)
     else
         return pow( 10.0f, val*(log10(m_Lmax)-log10(m_Lmin)) + log10(m_Lmin) );
 }
-
-

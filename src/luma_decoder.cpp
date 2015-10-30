@@ -177,25 +177,16 @@ bool LumaDecoder::run()
     vpx_codec_iter_t iter = NULL;
     
     if (!m_reader.readFrame()) // Reading frame failed, probably EOF
-    {
-        //fprintf( stderr, "EOF\n" );
         return false;
-    }
 
     unsigned int frame_size = 0;
     const uint8_t *frame = m_reader.getFrame(frame_size);
     
     if (vpx_codec_decode(&m_codec, frame, frame_size, NULL, 0))
-    {
-        fprintf(stderr, "Failed to decode frame.\n");
-        return false;
-    }
+        throw LumaException("Failed to decode frame");
     
     if ((m_vpxFrame = vpx_codec_get_frame(&m_codec, &iter)) == NULL)
-    {
-        fprintf(stderr, "Failed to get decoded frame.\n");
-        return false;
-    }
+        throw("Failed to get decoded frame");
     
     //gettimeofday(&stop, NULL);
     //fprintf(stderr, "DECODING TIME: %f\n", (stop.tv_usec-start.tv_usec)/1000.0f);
@@ -240,5 +231,3 @@ void LumaDecoder::getVpxChannels()
         }
     }
 }
-
-

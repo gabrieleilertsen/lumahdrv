@@ -45,7 +45,7 @@
 using namespace Imf;
 using namespace Imath;
 
-bool ExrInterface::testFrame(Frame &frame, unsigned int w, unsigned int h)
+bool ExrInterface::testFrame(LumaFrame &frame, unsigned int w, unsigned int h)
 {
     frame.width = w;
     frame.height = h;
@@ -67,7 +67,7 @@ bool ExrInterface::testFrame(Frame &frame, unsigned int w, unsigned int h)
     return 1;
 }
 
-bool ExrInterface::readFrame(const char *inputFile, Frame &frame)
+bool ExrInterface::readFrame(const char *inputFile, LumaFrame &frame)
 {
     try
     {
@@ -150,7 +150,7 @@ bool ExrInterface::readFrame(const char *inputFile, Frame &frame)
     return 1;
 }
 
-bool ExrInterface::writeFrame(const char *outputFile, Frame &frame)
+bool ExrInterface::writeFrame(const char *outputFile, LumaFrame &frame)
 {
     if (frame.buffer == NULL)
         throw LumaException("Frame does not contain any data");
