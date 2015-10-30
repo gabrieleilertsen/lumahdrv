@@ -51,7 +51,7 @@
 
 #include "luma_quantizer.h"
 #include "mkv_interface.h"
-#include "frame.h"
+#include "luma_frame.h"
 
 #include "vpx_encoder.h"
 #include "vp8cx.h"
@@ -86,10 +86,11 @@ public:
         m_writer.openWrite(outputFile, w, h);
         return true;
     }
+    
     virtual bool run() = 0;
+    virtual void setChannels(LumaFrame *frame) = 0;
+    virtual bool encode(LumaFrame *frame) = 0;
     virtual void finish() { m_writer.close(); };
-    virtual void setChannels(Frame *frame) = 0;
-    virtual void set(Frame *frame) = 0;
     
     bool initialized() { return m_initialized; }
     
@@ -133,15 +134,19 @@ public:
     ~LumaEncoder();
 
     bool initialize(const char *outputFile, const unsigned int w, const unsigned int h);
-    void setChannels(Frame *frame);
-    void set(Frame *frame)
+    bool run();
+    void setChannels(LumaFrame *frame);
+    bool encode(LumaFrame *frame)
     {
         m_quant.transformColorSpace(frame, true, m_params.preScaling);
         setChannels(frame);
+        
+        return run();
     }
-    bool run();
     void finish();
-    LumaEncoderParams *getParams() { return &m_params; }
+    
+    LumaEncoderParams getParams() { return m_params; }
+    void setParams(LumaEncoderParams params) { m_params = params; };
     
 private:
     int encode_frame_vpx(vpx_codec_ctx_t *codec,

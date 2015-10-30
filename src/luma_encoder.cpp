@@ -42,7 +42,6 @@
 #include <math.h>
 #include <algorithm>
 
-
 LumaEncoder::LumaEncoder()
 {
 	m_frameCount = 0;
@@ -177,7 +176,7 @@ bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const
     return true;
 }
 
-void LumaEncoder::setChannels(Frame *frame)
+void LumaEncoder::setChannels(LumaFrame *frame)
 {
     setVpxChannel(&m_rawFrame, frame->getChannel(0), 0);
 	setVpxChannel(&m_rawFrame, frame->getChannel(1), 1);

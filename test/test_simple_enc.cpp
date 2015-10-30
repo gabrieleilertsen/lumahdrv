@@ -25,30 +25,32 @@ int main(int argc, char* argv[])
     
     
     LumaEncoder encoder;
-    LumaEncoderParams *params = encoder.getParams();
-    params->profile = 2;
-    params->bitrate = 1000;
-    params->keyframeInterval = 0;
-    params->bitDepth = 12;
-    params->ptfBitDepth = 11;
-    params->colorBitDepth = 8;
-    params->lossLess = 0; // --> // 0;
+    LumaEncoderParams params = encoder.getParams();
+    params.profile = 2;
+    params.bitrate = 1000;
+    params.keyframeInterval = 0;
+    params.bitDepth = 12;
+    params.ptfBitDepth = 11;
+    params.colorBitDepth = 8;
+    params.lossLess = 0; // --> // 0;
+    
+    params.quantizerScale = 4;
+    params.ptf = LumaQuantizer::PTF_PQ;
+    params.colorSpace = LumaQuantizer::CS_LUV;
     
     // LDR
-    //params->profile = 0;
-    //params->bitDepth = 8;
-    //params->ptfBitDepth = 8;
+    //params.profile = 0;
+    //params.bitDepth = 8;
+    //params.ptfBitDepth = 8;
     
-    params->quantizerScale = 4;
-    params->ptf = LumaQuantizer::PTF_PQ;
-    params->colorSpace = LumaQuantizer::CS_LUV;
+    encoder.setParams(params);
     
     char str[500];
     for (int f = startFrame; f <= endFrame; f++)
     {
         printf("Encoding frame %d.\n", f );
         
-        Frame frame;
+        LumaFrame frame;
         
         if (hdrFrames != NULL)
         {
@@ -61,8 +63,7 @@ int main(int argc, char* argv[])
         if (!encoder.initialized())
             encoder.initialize(outputFile == NULL ? "output.mkv" : outputFile, frame.width, frame.height);
 
-        encoder.set(&frame);
-        encoder.run();
+        encoder.encode(&frame);
     }
     
     encoder.finish();

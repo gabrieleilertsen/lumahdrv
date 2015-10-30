@@ -54,7 +54,7 @@ PfsInterface::~PfsInterface()
 }
 
 
-bool PfsInterface::readFrame(const char *inputFile, Frame &frame)
+bool PfsInterface::readFrame(const char *inputFile, LumaFrame &frame)
 {  
   if( pfsio == NULL )
     pfsio = new pfs::DOMIO();
@@ -110,7 +110,7 @@ bool PfsInterface::readFrame(const char *inputFile, Frame &frame)
   
 }
 
-bool PfsInterface::writeFrame(const char *outputFile, Frame &frame)
+bool PfsInterface::writeFrame(const char *outputFile, LumaFrame &frame)
 {
   if( pfsio == NULL )
     pfsio = new pfs::DOMIO();

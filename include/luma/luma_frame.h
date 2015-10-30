@@ -1,18 +1,18 @@
-#ifndef FRAME_H
-#define FRAME_H
+#ifndef LUMAFRAME_H
+#define LUMAFRAME_H
 
 #include <cstddef>
 
-struct Frame
+struct LumaFrame
 {
-    Frame(unsigned int w = 0, unsigned int h = 0, unsigned int c = 3) : 
+    LumaFrame(unsigned int w = 0, unsigned int h = 0, unsigned int c = 3) : 
         height(h), width(w), channels(c), buffer(NULL)
     {
         if (height && width && channels)
             init();
     }
     
-    ~Frame() { clear(); }
+    ~LumaFrame() { clear(); }
     
     void clear()
     {
@@ -44,4 +44,4 @@ struct Frame
     float *buffer;
 };
 
-#endif //FRAME_H
+#endif //LUMAFRAME_H

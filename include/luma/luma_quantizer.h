@@ -48,7 +48,7 @@
 #ifndef LUMA_QUANTIZER_H
 #define LUMA_QUANTIZER_H
 
-#include "frame.h"
+#include "luma_frame.h"
 
 #include <string>
 
@@ -103,7 +103,7 @@ public:
     float quantize(const float val, const unsigned int ch) const;
     float dequantize(const float val, const unsigned int ch) const;
     
-    bool transformColorSpace(Frame *frame, bool toCs, float sc);
+    bool transformColorSpace(LumaFrame *frame, bool toCs, float sc);
     const float *getMapping(){ return m_mapping; }
     unsigned int getSize() { return m_maxVal; }
 private:

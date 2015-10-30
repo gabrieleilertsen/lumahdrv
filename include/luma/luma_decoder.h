@@ -76,6 +76,7 @@ struct LumaDecoderParamsBase
  * LumaDecoderBase provides the virtual interface for decoding of HDR video.
  *
  */
+ 
 class LumaDecoderBase
 {
 public:
@@ -84,22 +85,22 @@ public:
 
     virtual bool initialize(const char *inputFile) = 0;
     virtual bool run() = 0;
-    
-    virtual Frame *get() = 0;
-    LumaQuantizer *getQuantizer() { return &m_quant; }
-    Frame *getFrame() { return &m_frame; }
-    bool initialized() { return m_initialized; }
     void seekToTime(float tm, bool absolute = false)
     {
         m_reader.seekToTime(tm, absolute);
     }
+    
+    virtual LumaFrame *decode() = 0;
+    LumaQuantizer *getQuantizer() { return &m_quant; }
+    LumaFrame *getFrame() { return &m_frame; }
+    bool initialized() { return m_initialized; }
     
 protected:
     bool m_initialized;
     const char* m_input;
     LumaQuantizer m_quant;
     MkvInterface m_reader;
-    Frame m_frame;
+    LumaFrame m_frame;
 };
 
 
@@ -137,10 +138,11 @@ public:
 
     bool initialize(const char *inputFile);
     bool run();
-    LumaDecoderParams *getParams() { return &m_params; }
-    unsigned char **getBuffer() { return m_vpxFrame->planes; }
-    Frame *get()
+    LumaFrame *decode()
     {
+        if (!run())
+            return NULL;
+            
         if (!m_frame.width)
         {
             m_frame.width = m_vpxFrame->d_w;
@@ -149,16 +151,16 @@ public:
             m_frame.init();
         }
         
-        //timeval start, stop;
-        //gettimeofday(&start, NULL);
 	    getVpxChannels();
-	    //gettimeofday(&stop, NULL);
-        //fprintf(stderr, "\nVPX -> IM TIME: %f\n\n", (stop.tv_usec-start.tv_usec)/1000.0f);
         
         m_quant.transformColorSpace(&m_frame, false, m_params.preScaling);
         
         return &m_frame;
     }
+    
+    unsigned char **getBuffer() { return m_vpxFrame->planes; }
+    LumaDecoderParams getParams() { return m_params; }
+    void setParams(LumaDecoderParams params) { m_params = params; }
     
 private:
     void getVpxChannels();
