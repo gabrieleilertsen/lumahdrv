@@ -50,14 +50,14 @@
 #include <cstddef>
 #include <stdio.h>
 
-#include "frame.h"
+#include "luma_frame.h"
 
 class ExrInterface
 {
 public:
-    static bool readFrame(const char *inputFile, Frame &frame);
-    static bool writeFrame(const char *outputFile, Frame &frame);
-    static bool testFrame(Frame &frame, unsigned int w = 1280, unsigned int h = 720);
+    static bool readFrame(const char *inputFile, LumaFrame &frame);
+    static bool writeFrame(const char *outputFile, LumaFrame &frame);
+    static bool testFrame(LumaFrame &frame, unsigned int w = 1280, unsigned int h = 720);
 };
 
 #endif //EXR_INTERFACE_H

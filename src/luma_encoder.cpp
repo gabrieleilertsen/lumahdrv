@@ -244,6 +244,8 @@ void LumaEncoder::setVpxChannel(vpx_image_t *dest, const float *src, int plane)
     
     //fprintf(stderr, "--plane %d: %dx%d. stride = %d, bit depth = %dx8, profile = %d\n", plane, w, h, stride, m, profile);
     
+    float avg = 0.0f;
+    
     size_t ind1, ind2;
     float res;
     for (int y=0; y<h; y++)
@@ -257,7 +259,10 @@ void LumaEncoder::setVpxChannel(vpx_image_t *dest, const float *src, int plane)
                     res = 0.25f*(src[ind1] + src[ind1+1] + src[ind2] + src[ind2+1]);
             }
             else
+            {
                 res = src[x+y*w];
+                avg += res;
+            }
             
        		res = m_quant.quantize(res, plane);
             
@@ -272,5 +277,10 @@ void LumaEncoder::setVpxChannel(vpx_image_t *dest, const float *src, int plane)
                 buf[m*x+y*stride] = res;
         }
     }
+    
+    avg /= (w*h);
+    
+    if (!plane && avg <= 1.0f)
+        fprintf(stderr, "\n\tWarning! Mean luminance is %f cd/m2. Is input calibrated to physical units? \n", avg);
 }
 

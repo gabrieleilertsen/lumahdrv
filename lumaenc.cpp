@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
 {
     // Encoder and encoder params
     LumaEncoder encoder;
-    LumaEncoderParams *params = encoder.getParams();
+    LumaEncoderParams params = encoder.getParams();
 
 #ifdef HAVE_PFS    
     PfsInterface pfs; // Needs to store state between frames
@@ -177,15 +177,17 @@ int main(int argc, char* argv[])
 
     try
     {
-        if (!setParams(argc, argv, params))
+        if (!setParams(argc, argv, &params))
             return 1;
+            
+        encoder.setParams(params);
 
 #define STRBUF_LEN 500
         char str[STRBUF_LEN];
         int encoded_frame_count = 0;    
         for (int f = startFrame; f <= endFrame; f+=stepFrame)
         {        
-            Frame frame;
+            LumaFrame frame;
 
             // Read hdr frames, if available
             if( hdrFrames.size() == 0 || hasExtension( hdrFrames.c_str(), "pfs" ) )
@@ -212,8 +214,7 @@ int main(int argc, char* argv[])
             fprintf(stderr, "Encoding frame %d... ", f);
 
             // Run the encoder
-            encoder.set(&frame);
-            encoder.run();
+            encoder.encode(&frame);
             encoded_frame_count++;
             fprintf(stderr, "done\n");
         }

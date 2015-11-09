@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
         LumaDecoder decoder(inputFile.c_str());
         
         // Frame for retrieving and storing decoded frames
-        Frame *frame;
+        LumaFrame *frame;
         
 #define STRBUF_LEN 500
         char str[STRBUF_LEN];
@@ -108,12 +108,13 @@ int main(int argc, char* argv[])
         {
             fprintf(stderr, "Decoding frame %d... ", f);
             
-            // Run decoder
-            if (!decoder.run())
+            // Get decoded frame
+            frame = decoder.decode();
+            
+            // No frame available (EOF)
+            if (frame == NULL)
                 break;
             
-            // Get decoded frame
-            frame = decoder.get();
             fprintf(stderr, "done\n");
             decoded_frame_count++;
             

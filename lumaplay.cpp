@@ -60,7 +60,7 @@ const char* shader_src[] = {
 GLuint shader, program, texC1, texC2, texC3, texM;
 GLfloat strideRatio;
 LumaDecoder decoder;
-Frame* frame;
+LumaFrame* frame;
 
 timeval start1, start2, stop;
 
@@ -186,17 +186,19 @@ bool setupShader()
     glUniform1i(glGetUniformLocation(program, "texC3"), 2);
     glUniform1i(glGetUniformLocation(program, "texM"), 3);
     
+    LumaDecoderParams params = decoder.getParams();
+    
     float normalization = hbd ? 65535.0f : 255.0f;
     float maxVal = decoder.getQuantizer()->getSize() / normalization;
-    float maxValColor = (pow(2, decoder.getParams()->colorBitDepth) - 1) / normalization;
+    float maxValColor = (pow(2, params.colorBitDepth) - 1) / normalization;
     unsigned int colorSpaces[] = {LumaQuantizer::CS_LUV, LumaQuantizer::CS_RGB, LumaQuantizer::CS_YCBCR, LumaQuantizer::CS_XYZ};
-    unsigned int colorSpace = decoder.getParams()->colorSpace;
+    unsigned int colorSpace = params.colorSpace;
     
     glUniform1f(glGetUniformLocation(program, "maxVal"), maxVal);
     glUniform1f(glGetUniformLocation(program, "maxValColor"), maxValColor);
     glUniform1f(glGetUniformLocation(program, "exposure"), exposure);
     glUniform1f(glGetUniformLocation(program, "gamma"), gammaVal);
-    glUniform1f(glGetUniformLocation(program, "scaling"), decoder.getParams()->preScaling / userScaling);
+    glUniform1f(glGetUniformLocation(program, "scaling"), params.preScaling / userScaling);
     glUniform1iv(glGetUniformLocation(program, "colorSpaces"), 4, (GLint*)(colorSpaces));
     glUniform1i(glGetUniformLocation(program, "colorSpace"), colorSpace);
     glUniform1i(glGetUniformLocation(program, "doTmo"), doTmo);
@@ -390,16 +392,18 @@ int main(int argc, char** argv)
         if (!decoder.initialize(argv[1]))
             return 1;
     
-        hbd = decoder.getParams()->highBitDepth;
-        stride[0] = decoder.getParams()->stride[0];
-        stride[1] = decoder.getParams()->stride[1];
-        stride[2] = decoder.getParams()->stride[2];
-        width[0] = decoder.getParams()->width[0];
-        width[1] = decoder.getParams()->width[1];
-        width[2] = decoder.getParams()->width[2];
-        height[0] = decoder.getParams()->height[0];
-        height[1] = decoder.getParams()->height[1];
-        height[2] = decoder.getParams()->height[2];
+        LumaDecoderParams params = decoder.getParams();
+        
+        hbd = params.highBitDepth;
+        stride[0] = params.stride[0];
+        stride[1] = params.stride[1];
+        stride[2] = params.stride[2];
+        width[0] = params.width[0];
+        width[1] = params.width[1];
+        width[2] = params.width[2];
+        height[0] = params.height[0];
+        height[1] = params.height[1];
+        height[2] = params.height[2];
         
         strideRatio = ((float)stride[0])/width[0];
         if (hbd) strideRatio /= 2;
