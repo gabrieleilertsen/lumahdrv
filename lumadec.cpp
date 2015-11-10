@@ -47,7 +47,6 @@
 
 #include "config.h"
 
-std::string hdrFrames, inputFile;
 
 bool hasExtension( const char *file_name, const char *extension )
 {
@@ -65,7 +64,7 @@ bool hasExtension( const char *file_name, const char *extension )
     return false;
 }
 
-bool setParams(int argc, char* argv[])
+bool setParams(int argc, char* argv[], std::string &hdrFrames, std::string &inputFile, bool &verbose)
 {
     std::string info = std::string("lumadec -- Decode a high dynamic range (HDR) video that has been encoded with the HDRv codec\n\n") +
                        std::string("Usage: lumadec --input <hdr_video> --output <hdr_frames>\n");
@@ -74,8 +73,9 @@ bool setParams(int argc, char* argv[])
     ArgParser argHolder(info, postInfo);
     
     // Input arguments
-    argHolder.add(&inputFile, "--input",  "-i", "Input HDR video", 0);
-    argHolder.add(&hdrFrames, "--output", "-o", "Output location of decoded HDR frames");
+    argHolder.add(&inputFile, "--input",   "-i", "Input HDR video", 0);
+    argHolder.add(&hdrFrames, "--output",  "-o", "Output location of decoded HDR frames");
+    argHolder.add(&verbose,   "--verbose", "-v", "Verbose mode");
     
     // Parse arguments
     if (!argHolder.read(argc, argv))
@@ -86,17 +86,20 @@ bool setParams(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
+    std::string hdrFrames, inputFile;
+    bool verbose = 0;
+    
 #ifdef HAVE_PFS
     PfsInterface pfs; // Needs to store state between frames
 #endif
     
     try
     {
-        if (!setParams(argc, argv))
+        if (!setParams(argc, argv, hdrFrames, inputFile, verbose))
             return 1;
         
         // Decoder
-        LumaDecoder decoder(inputFile.c_str());
+        LumaDecoder decoder(inputFile.c_str(), verbose);
         
         // Frame for retrieving and storing decoded frames
         LumaFrame *frame;

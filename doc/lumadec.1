@@ -23,6 +23,10 @@ Output HDR video sequence. The frames are either stored in EXR format, or piped 
 pfstools for further processing, in which case this option should not be used. Format
 of the output frames is specified using a %d pattern.
 
+.TP
+.B \-v, \fB\-\-verbose
+Enable verbose mode, to display additional information during the decoding.
+
 .SH EXAMPLES
 .TP
 \fBlumadec\fR \fB--input\fR hdr_video.mkv \fB--output\fR hdr_frame_%05d.exr

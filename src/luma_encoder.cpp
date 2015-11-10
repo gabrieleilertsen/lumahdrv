@@ -59,7 +59,7 @@ LumaEncoder::~LumaEncoder()
 	}
 }
 
-bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const unsigned int h)
+bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const unsigned int h, bool verbose)
 {
     // Initialize base. Creates a Matroska file for writing
     LumaEncoderBase::initialize(outputFile, w, h);
@@ -99,6 +99,11 @@ bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const
     m_writer.addAttachment(435, (const binary*)buffer6, sizeof(float), "Scaling");
     
     m_writer.writeAttachments();
+    
+    // Framerate for timecodes    
+    m_writer.setFramerate(m_params.fps);
+    
+    m_writer.setVerbose(verbose);
     
     // Initialize VPX codec
     vpx_codec_err_t res;

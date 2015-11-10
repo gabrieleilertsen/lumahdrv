@@ -215,6 +215,7 @@ endif ( HAVE_OPENEXR )
 if( HAVE_OPENGL )
     add_executable(lumaplay
         lumaplay.cpp
+        ${PROJECT_SOURCE_DIR}/src/arg_parser.cpp
     )
     
     # Wrap shader code in to string file that can be loaded on compile time in lumaplay

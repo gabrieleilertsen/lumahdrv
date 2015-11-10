@@ -46,6 +46,7 @@ MkvInterface::MkvInterface()
     m_frameDuration = 40.0f;
     m_duration = 0.0f;
     m_file = NULL;
+    m_currentTime = 0;
     
     m_attachments = NULL;
     m_cues = NULL;
@@ -593,6 +594,7 @@ bool MkvInterface::findBlockGroup()
             KaxClusterTimecode & ClusterTime = *static_cast<KaxClusterTimecode*>(m_element2b);
             ClusterTime.ReadData(aStream->I_O());
             clusterTimecode = uint32(ClusterTime);
+            m_currentTime = clusterTimecode;
             segmentCluster->InitTimecode(clusterTimecode, TIMECODE_SCALE);
             
             if (m_verbose) fprintf(stderr, "\tCluster time code = %d\n", clusterTimecode);
@@ -639,11 +641,12 @@ const uint8 *MkvInterface::getFrame(unsigned int & buffer_size)
     else 
         fprintf(stderr, "Warning! A BlockGroup without a Block!\n");
     
-    /*
+    
     KaxBlockDuration * BlockDuration = static_cast<KaxBlockDuration *>(aBlockGroup.FindElt(KaxBlockDuration::ClassInfos));
     if (BlockDuration != NULL)
-        fprintf(stderr, "  Block Duration %d scaled ticks : %ld ns\n", uint32(*BlockDuration), uint32(*BlockDuration) * TIMECODE_SCALE);
-
+        m_frameDuration = uint32(*BlockDuration);
+    //    fprintf(stderr, "  Block Duration %d scaled ticks : %ld ns\n", uint32(*BlockDuration), uint32(*BlockDuration) * TIMECODE_SCALE);
+    /*
     KaxReferenceBlock * RefTime = static_cast<KaxReferenceBlock *>(aBlockGroup.FindElt(KaxReferenceBlock::ClassInfos));
     if (RefTime != NULL)
         fprintf(stderr, "  Reference frame at scaled (%d) timecode %ld\n", int32(*RefTime), int32(int64(*RefTime) * TIMECODE_SCALE));

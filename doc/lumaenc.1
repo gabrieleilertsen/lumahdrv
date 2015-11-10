@@ -17,6 +17,37 @@ luminances. The transformed frames are then encoded using Google's VP9 video cod
 using a high bit depth profile. Finally, the video is packaged together with all
 needed meta data in a Matroska containter.
 
+The parameters for \fBlumaenc\fR, listed below, provide a set of options for tweaking
+the bit depth of the encoded video stream:
+
+.RS
+\fB--profile\fR           - selects encoding profile
+.RE
+.RS
+\fB--ptf-bitdepth\fR      - selects bit depth target of perceptual transfer function
+.RE
+.RS 
+\fB--color-bitdepth\fR    - selects bit depth target of color channels
+.RE
+.RS 
+\fB--encoding-bitdepth\fR - selects the actual bit depth to encode at
+.RE
+
+The ptf and color bit depths are only the ranges to which the luminance and color 
+channels are mapped to, respectively. They are then encoded using the selected encoding 
+bit depth. This means that if the ptf or color bit depth is larger than the encoding 
+bit depth, the values that do not fit within this bit depth will be clamped. And 
+if the ptf or color bit depth is less than the encoding bit depth, there will be 
+empty bits and thus an effective bit depth that is lower than the encoding bit 
+depth (this is the default for luminance and color channels, which only use 11 and
+8 bits, respectively, but are encoded at 12 bits).
+
+This also means that some combinations of the options can not be used, and the encoder 
+should correct for this. For example, if profile 0 is selected, then the encoding 
+bit depth must be 8, since this profile only supports 8 bits. The encoder will detect
+if the encoding bit depth is larger, and in that case change the profile to 2.
+
+
 .SH OPTIONS
 .TP
 .B \-i  \fIFILE\fR, \fB\-\-input \fIFILE
@@ -34,6 +65,12 @@ container, and should thus use file extension '.mkv'.
 Input frame range, formatted as startframe:step:endframe
 
 .TP
+.B \-fps  \fIVALUE\fR, \fB\-\-framerate \fIVALUE
+Framerate of encoded HDR video stream, specified as frames/s.
+
+Default value is 25.
+
+.TP
 .B \-p  \fIPROFILE\fR, \fB\-\-profile \fIPROFILE
 VP9 encoding profile:
 
@@ -43,6 +80,26 @@ VP9 encoding profile:
   3 : 12 bits, 444
   
 Default value is 2.
+
+.TP
+.B \-pb  \fIDEPTH\fR, \fB\-\-ptf-bitdepth \fIDEPTH
+Bit depth of the perceptual transfer function. This should be <= \fB--encoding-bitdepth\fR
+to fit the bit depth used for encoding.
+
+Default value is 11.
+
+.TP
+.B \-cb  \fIDEPTH\fR, \fB\-\-color-bitdepth \fIDEPTH
+Bit depth of the color channels. This should be <= \fB--encoding-bitdepth\fR
+to fit the bit depth used for encoding.
+
+Default value is 8.
+
+.TP
+.B \-eb  \fIDEPTH\fR, \fB\-\-encoding-bitdepth \fIDEPTH
+Encode at 8 bits, or use high bit depth encoding at 10 or 12 bits.
+
+Default is 12.
 
 .TP
 .B \-q  \fISCALE\fR, \fB\-\-quantizer-scaling \fISCALE
@@ -58,20 +115,6 @@ encoding expects input to be in physical units (cd/m²), this option can be used
 to calibrate the input to the correct range.
 
 Default value is 1.
-
-.TP
-.B \-pb  \fIDEPTH\fR, \fB\-\-ptf-bitdepth \fIDEPTH
-Bit depth of the perceptual transfer function. This should be <= \fB--encoding-bitdepth\fR
-to fit the bit depth used for encoding.
-
-Default value is 11.
-
-.TP
-.B \-cb  \fIDEPTH\fR, \fB\-\-color-bitdepth \fIDEPTH
-Bit depth of the color channels. This should be <= \fB--encoding-bitdepth\fR
-to fit the bit depth used for encoding.
-
-Default value is 8.
 
 .TP
 .B \-ptf  \fIPTF\fR, \fB\-\-transfer-function \fIPTF
@@ -108,14 +151,12 @@ automatically determines keyframe positions.
 Default is 0.
 
 .TP
-.B \-eb  \fIDEPTH\fR, \fB\-\-encoding-bitdepth \fIDEPTH
-Encode at 8 bits, or use high bit depth encoding at 10 or 12 bits.
-
-Default is 12.
-
-.TP
 .B \-l, \fB\-\-lossless
 Enable lossless encoding mode.
+
+.TP
+.B \-v, \fB\-\-verbose
+Enable verbose mode, to display additional information during the encoding.
 
 .SH EXAMPLES
 .TP
