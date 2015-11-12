@@ -47,8 +47,8 @@
 
 #include "config.h"
 
-std::string hdrFrames, inputFile;
 
+// Determine file extension
 bool hasExtension( const char *file_name, const char *extension )
 {
     if( file_name == NULL )
@@ -65,8 +65,10 @@ bool hasExtension( const char *file_name, const char *extension )
     return false;
 }
 
-bool setParams(int argc, char* argv[])
+// Parse parameter options from command line
+bool setParams(int argc, char* argv[], std::string &hdrFrames, std::string &inputFile, bool &verbose)
 {
+    // Application usage info
     std::string info = std::string("lumadec -- Decode a high dynamic range (HDR) video that has been encoded with the HDRv codec\n\n") +
                        std::string("Usage: lumadec --input <hdr_video> --output <hdr_frames>\n");
     std::string postInfo = std::string("\nExample: lumadec -i hdr_video.mkv -o hdr_frame_%05d.exr\n\n") +
@@ -74,8 +76,9 @@ bool setParams(int argc, char* argv[])
     ArgParser argHolder(info, postInfo);
     
     // Input arguments
-    argHolder.add(&inputFile, "--input",  "-i", "Input HDR video", 0);
-    argHolder.add(&hdrFrames, "--output", "-o", "Output location of decoded HDR frames");
+    argHolder.add(&inputFile, "--input",   "-i", "Input HDR video", 0);
+    argHolder.add(&hdrFrames, "--output",  "-o", "Output location of decoded HDR frames");
+    argHolder.add(&verbose,   "--verbose", "-v", "Verbose mode");
     
     // Parse arguments
     if (!argHolder.read(argc, argv))
@@ -86,20 +89,23 @@ bool setParams(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
+    std::string hdrFrames, inputFile;
+    bool verbose = 0;
+    
 #ifdef HAVE_PFS
     PfsInterface pfs; // Needs to store state between frames
 #endif
     
     try
     {
-        if (!setParams(argc, argv))
+        if (!setParams(argc, argv, hdrFrames, inputFile, verbose))
             return 1;
         
         // Decoder
-        LumaDecoder decoder(inputFile.c_str());
+        LumaDecoder decoder(inputFile.c_str(), verbose);
         
         // Frame for retrieving and storing decoded frames
-        Frame *frame;
+        LumaFrame *frame;
         
 #define STRBUF_LEN 500
         char str[STRBUF_LEN];
@@ -108,12 +114,13 @@ int main(int argc, char* argv[])
         {
             fprintf(stderr, "Decoding frame %d... ", f);
             
-            // Run decoder
-            if (!decoder.run())
+            // Get decoded frame
+            frame = decoder.decode();
+            
+            // No frame available (EOF)
+            if (frame == NULL)
                 break;
             
-            // Get decoded frame
-            frame = decoder.get();
             fprintf(stderr, "done\n");
             decoded_frame_count++;
             
@@ -156,3 +163,4 @@ int main(int argc, char* argv[])
     
     return 0;
 }
+

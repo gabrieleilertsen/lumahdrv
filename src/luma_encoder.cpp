@@ -59,14 +59,15 @@ LumaEncoder::~LumaEncoder()
 	}
 }
 
-bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const unsigned int h)
+// Initialize encoder, given setup in the encoder parameters
+bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const unsigned int h, bool verbose)
 {
     // Initialize base. Creates a Matroska file for writing
     LumaEncoderBase::initialize(outputFile, w, h);
     
+    // Adjust profile for the specified bit depth (0-1 for 8 bits, and 2-3 for higher bit depths)
     if (m_params.profile > 1 && m_params.bitDepth == 8)
         m_params.profile -=2;
-    
     if (m_params.profile < 2 && m_params.bitDepth > 8)
         m_params.profile +=2;
     
@@ -99,6 +100,11 @@ bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const
     m_writer.addAttachment(435, (const binary*)buffer6, sizeof(float), "Scaling");
     
     m_writer.writeAttachments();
+    
+    // Framerate for timecodes    
+    m_writer.setFramerate(m_params.fps);
+    
+    m_writer.setVerbose(verbose);
     
     // Initialize VPX codec
     vpx_codec_err_t res;
@@ -176,6 +182,7 @@ bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const
     return true;
 }
 
+// Set vpx encoding channels from input frame
 void LumaEncoder::setChannels(LumaFrame *frame)
 {
     setVpxChannel(&m_rawFrame, frame->getChannel(0), 0);
@@ -183,16 +190,22 @@ void LumaEncoder::setChannels(LumaFrame *frame)
 	setVpxChannel(&m_rawFrame, frame->getChannel(2), 2);
 }
 
+// Run the encoder
 bool LumaEncoder::run()
 {
 	int flags = 0;
+	
+	// Force key frame?
 	if (m_params.keyframeInterval > 0 && m_frameCount % m_params.keyframeInterval == 0)
 		flags = VPX_EFLAG_FORCE_KF;
+    
+    // Start encoder
 	encode_frame_vpx(&m_codec, &m_rawFrame, m_frameCount++, flags);
 	
 	return true;
 }
 
+// Finish encoding buffered frames
 void LumaEncoder::finish()
 {
     // Flush vpx encoder.
@@ -202,10 +215,11 @@ void LumaEncoder::finish()
 }
 
 
+// Encoding of one frame
 int LumaEncoder::encode_frame_vpx(vpx_codec_ctx_t *codec,
-                                     vpx_image_t *img,
-                                     int frame_index,
-                                     int flags)
+                                  vpx_image_t *img,
+                                  int frame_index,
+                                  int flags)
 {
     int got_pkts = 0;
     vpx_codec_iter_t iter = NULL;
@@ -232,17 +246,24 @@ int LumaEncoder::encode_frame_vpx(vpx_codec_ctx_t *codec,
     return got_pkts;
 }
 
+// Convert a frame buffer to a vpx frame
 void LumaEncoder::setVpxChannel(vpx_image_t *dest, const float *src, int plane)
 {
     unsigned char *buf = dest->planes[plane];
     const int stride = dest->stride[plane];
-    const int w = (plane > 0 && dest->x_chroma_shift > 0) ? (dest->d_w + 1) >> dest->x_chroma_shift : dest->d_w; //vpx_img_plane_width(src, plane); // * ((dest->fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? 2 : 1);
-    const int h = (plane > 0 && dest->y_chroma_shift > 0) ? (dest->d_h + 1) >> dest->y_chroma_shift : dest->d_h; //vpx_img_plane_height(src, plane);
+    
+    // Width and height depends on chroma sub sampling for the color channels
+    const int w = (plane > 0 && dest->x_chroma_shift > 0) ?
+                  (dest->d_w + 1) >> dest->x_chroma_shift : dest->d_w;
+    const int h = (plane > 0 && dest->y_chroma_shift > 0) ? 
+                  (dest->d_h + 1) >> dest->y_chroma_shift : dest->d_h;
     
     const int m = ((dest->fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? 2 : 1);
-    const int profile = m_params.profile; //dest->x_chroma_shift ? 2 : 3;
+    const int profile = m_params.profile;
     
     //fprintf(stderr, "--plane %d: %dx%d. stride = %d, bit depth = %dx8, profile = %d\n", plane, w, h, stride, m, profile);
+    
+    float avg = 0.0f;
     
     size_t ind1, ind2;
     float res;
@@ -250,6 +271,7 @@ void LumaEncoder::setVpxChannel(vpx_image_t *dest, const float *src, int plane)
     {
         for (int x=0; x<w; x++)
         {
+            // Color sub sampling, as simple average
             if (plane && (profile == 2 || profile == 0))
             {
                     ind1 = 2*x+4*y*w;
@@ -257,10 +279,15 @@ void LumaEncoder::setVpxChannel(vpx_image_t *dest, const float *src, int plane)
                     res = 0.25f*(src[ind1] + src[ind1+1] + src[ind2] + src[ind2+1]);
             }
             else
+            {
                 res = src[x+y*w];
+                avg += res;
+            }
             
+            // Quantize the pixel
        		res = m_quant.quantize(res, plane);
             
+            // For high bit depths, split pixel into separate bytes (big endian)
             if (profile > 1)
             {
                 unsigned char bl = res/256;
@@ -272,5 +299,10 @@ void LumaEncoder::setVpxChannel(vpx_image_t *dest, const float *src, int plane)
                 buf[m*x+y*stride] = res;
         }
     }
+    
+    // Warn if average luminace is < 1, which could imply uncalibrated input
+    avg /= (w*h);
+    if (!plane && avg <= 1.0f)
+        fprintf(stderr, "\n\tWarning! Mean luminance is %f cd/m2. Is input calibrated to physical units? \n", avg);
 }
 

@@ -57,6 +57,7 @@ LumaQuantizer::~LumaQuantizer()
         delete[] m_mapping;
 }
 
+// Names of perceptual transfer functions
 std::string LumaQuantizer::name(ptf_t ptf)
 {
     std::string name;
@@ -84,6 +85,7 @@ std::string LumaQuantizer::name(ptf_t ptf)
     return name;
 }
 
+// Names of color spaces
 std::string LumaQuantizer::name(colorSpace_t cs)
 {
     std::string name;
@@ -108,6 +110,65 @@ std::string LumaQuantizer::name(colorSpace_t cs)
     return name;
 }
 
+// Define PQ mapping
+void LumaQuantizer::setMappingPQ()
+{
+    for (size_t i=0; i<=m_maxVal; i++)
+	    m_mapping[i] = transformPQ((float)i/m_maxVal, 0);
+}
+
+// Define log mapping
+void LumaQuantizer::setMappingLog()
+{
+    for (size_t i=0; i<=m_maxVal; i++)
+        m_mapping[i] = transformLog((float)i/m_maxVal, 0);
+}
+
+// Define JND HDR-VDP2 mapping
+void LumaQuantizer::setMappingJNDHDRVDP()
+{
+    const float *mapping;
+    switch (m_bitdepth)
+    {
+    case 10:
+        mapping = ptf_jnd_hdrvdp_10bit;
+        break;
+    case 11:
+        mapping = ptf_jnd_hdrvdp_11bit;
+        break;
+    case 12:
+    default:
+        mapping = ptf_jnd_hdrvdp_12bit;
+        break;
+    }
+    
+    for (size_t i=0; i<=m_maxVal; i++)
+        m_mapping[i] = mapping[i];
+}
+
+// Define mapping from original HDR video encdoing paper
+void LumaQuantizer::setMappingPsi()
+{
+    const float *mapping;
+    switch (m_bitdepth)
+    {
+    case 10:
+        mapping = ptf_jnd_ferwerda_10bit;
+        break;
+    case 11:
+        mapping = ptf_jnd_ferwerda_11bit;
+        break;
+    case 12:
+    default:
+        mapping = ptf_jnd_ferwerda_12bit;
+        break;
+    }
+    
+    for (size_t i=0; i<=m_maxVal; i++)
+        m_mapping[i] = mapping[i];
+}
+
+// Specify the quanizer to use, which includes ptf, color space and their respective bit depths
 void LumaQuantizer::setQuantizer(ptf_t ptf, unsigned int bitdepth,
                                  colorSpace_t cs, unsigned int bitdepthC)
 {
@@ -147,6 +208,7 @@ void LumaQuantizer::setQuantizer(ptf_t ptf, unsigned int bitdepth,
     //    fprintf(stderr, "%0.8f, ", m_mapping[i]);
 }
 
+// Run quantizer on a pixel value
 float LumaQuantizer::quantize(const float val, const unsigned int ch) const
 {
     float res;
@@ -178,6 +240,7 @@ float LumaQuantizer::quantize(const float val, const unsigned int ch) const
 	return res;
 }
 
+// Run dequantizer on a pixel value
 float LumaQuantizer::dequantize(const float val, const unsigned int ch) const
 {
     float res;
@@ -197,60 +260,7 @@ float LumaQuantizer::dequantize(const float val, const unsigned int ch) const
 	return res;
 }
 
-void LumaQuantizer::setMappingPQ()
-{
-    for (size_t i=0; i<=m_maxVal; i++)
-	    m_mapping[i] = transformPQ((float)i/m_maxVal, 0);
-}
-
-void LumaQuantizer::setMappingLog()
-{
-    for (size_t i=0; i<=m_maxVal; i++)
-        m_mapping[i] = transformLog((float)i/m_maxVal, 0);
-}
-
-void LumaQuantizer::setMappingJNDHDRVDP()
-{
-    const float *mapping;
-    switch (m_bitdepth)
-    {
-    case 10:
-        mapping = ptf_jnd_hdrvdp_10bit;
-        break;
-    case 11:
-        mapping = ptf_jnd_hdrvdp_11bit;
-        break;
-    case 12:
-    default:
-        mapping = ptf_jnd_hdrvdp_12bit;
-        break;
-    }
-    
-    for (size_t i=0; i<=m_maxVal; i++)
-        m_mapping[i] = mapping[i];
-}
-
-void LumaQuantizer::setMappingPsi()
-{
-    const float *mapping;
-    switch (m_bitdepth)
-    {
-    case 10:
-        mapping = ptf_jnd_ferwerda_10bit;
-        break;
-    case 11:
-        mapping = ptf_jnd_ferwerda_11bit;
-        break;
-    case 12:
-    default:
-        mapping = ptf_jnd_ferwerda_12bit;
-        break;
-    }
-    
-    for (size_t i=0; i<=m_maxVal; i++)
-        m_mapping[i] = mapping[i];
-}
-
+// Color transformation of a frame
 bool LumaQuantizer::transformColorSpace(LumaFrame *frame, bool toCs, float sc)
 {
     if (toCs)
@@ -468,6 +478,7 @@ bool LumaQuantizer::transformColorSpace(LumaFrame *frame, bool toCs, float sc)
     return true;
 }
 
+// PQ function
 float LumaQuantizer::transformPQ(float val, bool encode)
 {
     const float L = m_Lmax,
@@ -486,6 +497,7 @@ float LumaQuantizer::transformPQ(float val, bool encode)
     }
 }
 
+// Log function
 float LumaQuantizer::transformLog(float val, bool encode)
 {
     if (encode)
@@ -493,3 +505,4 @@ float LumaQuantizer::transformLog(float val, bool encode)
     else
         return pow( 10.0f, val*(log10(m_Lmax)-log10(m_Lmin)) + log10(m_Lmin) );
 }
+

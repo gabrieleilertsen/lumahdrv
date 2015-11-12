@@ -47,9 +47,18 @@
 
 #include "config.h"
 
-std::string hdrFrames, outputFile;
-int startFrame = 1, endFrame = 9999, stepFrame = 1;
+// Input and output specific information
+struct IOData
+{
+    IOData() : startFrame(1), endFrame(9999), stepFrame(1), verbose(0)
+    {}
+    
+    std::string hdrFrames, outputFile;
+    unsigned int startFrame, endFrame, stepFrame;
+    bool verbose;
+};
 
+// Determine file extension
 bool hasExtension( const char *file_name, const char *extension )
 {
     if( file_name == NULL )
@@ -66,7 +75,8 @@ bool hasExtension( const char *file_name, const char *extension )
     return false;
 }
 
-bool getFrameRange(std::string &frames, int &start, int &step, int &end)
+// Parse a frame range, given as <startFrame>:<step>:<endFrame>
+bool getFrameRange(std::string &frames, unsigned int &start, unsigned int &step, unsigned int &end)
 {
     int nrDelim = -1;
     std::string::size_type pos = -1;
@@ -80,7 +90,7 @@ bool getFrameRange(std::string &frames, int &start, int &step, int &end)
     if (nrDelim < 1 || nrDelim > 2)
         return 0;
     
-    int *range[3] = {&start, &step, &end};
+    unsigned int *range[3] = {&start, &step, &end};
     char *startPtr = &frames[0], *endPtr;
     
     for (size_t i=0; i<3; i+=3-nrDelim)
@@ -94,13 +104,15 @@ bool getFrameRange(std::string &frames, int &start, int &step, int &end)
     return 1;
 }
 
-bool setParams(int argc, char* argv[], LumaEncoderParams *params)
+// Parse parameter options from command line
+bool setParams(int argc, char* argv[], LumaEncoderParams *params, IOData *io)
 {
     std::string frames;
     std::string ptf, ptfValues[] = {"PSI", "PQ", "LOG", "HDRVDP", "LINEAR"}; // valid ptf input values
     std::string cs, csValues[] = {"LUV", "RGB", "YCBCR", "XYZ"}; // valid color space input values
     unsigned int bdValues[] = {8, 10, 12}; // valid bit depths
 
+    // Application usage info
     std::string info = std::string("lumaenc -- Compress a sequence of high dyncamic range (HDR) frames in to a Matroska (.mkv) HDR video\n\n") +
                        std::string("Usage: lumaenc --input <hdr_frames> \\\n") +
                        std::string("               --frames <start_frame:step:end_frame> \\\n") +
@@ -110,9 +122,10 @@ bool setParams(int argc, char* argv[], LumaEncoderParams *params)
     ArgParser argHolder(info, postInfo);
 
     // Input arguments
-    argHolder.add(&hdrFrames,                "--input",             "-i",   "Input HDR video sequence");
-    argHolder.add(&outputFile,               "--output",            "-o",   "Output location of the compressed HDR video", 0);
+    argHolder.add(&io->hdrFrames,            "--input",             "-i",   "Input HDR video sequence");
+    argHolder.add(&io->outputFile,           "--output",            "-o",   "Output location of the compressed HDR video", 0);
     argHolder.add(&frames,                   "--frames",            "-f",   "Input frames, formatted as startframe:step:endframe");
+    argHolder.add(&params->fps,              "--framerate",         "-fps", "Framerate of video stream, specified as frames/s");
     argHolder.add(&params->profile,          "--profile",           "-p",   "VP9 encoding profile", (unsigned int)(0), (unsigned int)(3));
     argHolder.add(&params->quantizerScale,   "--quantizer-scaling", "-q",   "Scaling of the encoding quantization", (unsigned int)(0), (unsigned int)(63));
     argHolder.add(&params->preScaling,       "--pre-scaling",       "-sc",  "Scaling of pixels to apply before tranformation and encoding", 0.0f, 1e20f);
@@ -124,21 +137,22 @@ bool setParams(int argc, char* argv[], LumaEncoderParams *params)
     argHolder.add(&params->keyframeInterval, "--keyframe-interval", "-k",   "Interval between keyframes. 0 for automatic keyframes", (unsigned int)(0), (unsigned int)(9999));
     argHolder.add(&params->bitDepth,         "--encoding-bitdepth", "-eb",  "Encoding at 8, 10 or 12 bits", bdValues, 3);
     argHolder.add(&params->lossLess,         "--lossless",          "-l",   "Enable lossless encoding mode");
+    argHolder.add(&io->verbose,              "--verbose",           "-v",   "Verbose mode");
 
     // Parse arguments
     if (!argHolder.read(argc, argv))
         return 0;
     
     // Check output format
-    if (!hasExtension(outputFile.c_str(), ".mkv"))
+    if (!hasExtension(io->outputFile.c_str(), ".mkv"))
         throw ParserException("Unsupported output format. HDR video should be stored as Matroska file (.mkv)");
     
     // Parse frame range
-    if (frames.size() > 0 && !getFrameRange(frames, startFrame, stepFrame, endFrame))
+    if (frames.size() > 0 && !getFrameRange(frames, io->startFrame, io->stepFrame, io->endFrame))
         throw ParserException(std::string("Unable to parse frame range from '" + frames + "'. Valid format is startframe:step:endframe").c_str());
     
     // Valid frame range?
-    if (endFrame < startFrame)
+    if (io->endFrame < io->startFrame)
         throw ParserException(std::string("Invalid frame range '" + frames + "'. End frame should be >= start frame").c_str());
 
     // Translate input strings to enums
@@ -167,9 +181,12 @@ bool setParams(int argc, char* argv[], LumaEncoderParams *params)
 
 int main(int argc, char* argv[])
 {
+    // Holder for input/output options
+    IOData io;
+    
     // Encoder and encoder params
     LumaEncoder encoder;
-    LumaEncoderParams *params = encoder.getParams();
+    LumaEncoderParams params = encoder.getParams();
 
 #ifdef HAVE_PFS    
     PfsInterface pfs; // Needs to store state between frames
@@ -177,43 +194,46 @@ int main(int argc, char* argv[])
 
     try
     {
-        if (!setParams(argc, argv, params))
+        // Read parameters from input
+        if (!setParams(argc, argv, &params, &io))
             return 1;
+        
+        // Set the encoder parameters    
+        encoder.setParams(params);
 
 #define STRBUF_LEN 500
         char str[STRBUF_LEN];
         int encoded_frame_count = 0;    
-        for (int f = startFrame; f <= endFrame; f+=stepFrame)
+        for (unsigned int f = io.startFrame; f <= io.endFrame; f+=io.stepFrame)
         {        
-            Frame frame;
+            LumaFrame frame;
 
             // Read hdr frames, if available
-            if( hdrFrames.size() == 0 || hasExtension( hdrFrames.c_str(), "pfs" ) )
+            if( io.hdrFrames.size() == 0 || hasExtension( io.hdrFrames.c_str(), "pfs" ) )
             {
 #ifdef HAVE_PFS
-                if( !pfs.readFrame(hdrFrames.c_str(), frame) )
+                if( !pfs.readFrame(io.hdrFrames.c_str(), frame) )
                     break;
 #else
                 throw LumaException( "Compiled without pfstools support" );          
 #endif
             }
-            else if ( strcmp( hdrFrames.c_str(), "__test__" ) == 0 )
+            else if ( strcmp( io.hdrFrames.c_str(), "__test__" ) == 0 )
                 ExrInterface::testFrame(frame);
             else // OpenEXR?          
             {
-                snprintf(str, STRBUF_LEN-1, hdrFrames.c_str(), f);
+                snprintf(str, STRBUF_LEN-1, io.hdrFrames.c_str(), f);
                 ExrInterface::readFrame(str, frame);
             }
 
             // Initialize encoder
             if (!encoder.initialized())
-                encoder.initialize(outputFile.size() == 0 ? "output.mkv" : outputFile.c_str(), frame.width, frame.height);
+                encoder.initialize(io.outputFile.size() == 0 ? "output.mkv" : io.outputFile.c_str(), frame.width, frame.height, io.verbose);
 
             fprintf(stderr, "Encoding frame %d... ", f);
 
             // Run the encoder
-            encoder.set(&frame);
-            encoder.run();
+            encoder.encode(&frame);
             encoded_frame_count++;
             fprintf(stderr, "done\n");
         }
@@ -241,3 +261,4 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+

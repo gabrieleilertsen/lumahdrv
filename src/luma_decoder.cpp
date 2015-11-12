@@ -43,14 +43,14 @@
 #include <math.h>
 #include <algorithm>
 
-LumaDecoder::LumaDecoder(const char *inputFile)
+LumaDecoder::LumaDecoder(const char *inputFile, bool verbose)
 {
     m_initialized = false;
     
     if (inputFile != NULL)
     {
         m_input = inputFile;
-        initialize(inputFile);
+        initialize(inputFile, verbose);
     }
 }
 
@@ -60,7 +60,7 @@ LumaDecoder::~LumaDecoder()
         fprintf(stderr, "Failed to destroy vpx codec\n");
 }
 
-bool LumaDecoder::initialize(const char *inputFile)
+bool LumaDecoder::initialize(const char *inputFile, bool verbose)
 {
     if (inputFile == NULL)
         return false;
@@ -69,6 +69,7 @@ bool LumaDecoder::initialize(const char *inputFile)
     
     // Open Matroska file
     m_reader.openRead(inputFile);
+    m_reader.setVerbose(verbose);
     
     // Read attachments
     binary *buffer;

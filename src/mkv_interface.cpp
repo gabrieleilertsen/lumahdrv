@@ -46,6 +46,7 @@ MkvInterface::MkvInterface()
     m_frameDuration = 40.0f;
     m_duration = 0.0f;
     m_file = NULL;
+    m_currentTime = 0;
     
     m_attachments = NULL;
     m_cues = NULL;
@@ -79,17 +80,6 @@ MkvInterface::~MkvInterface()
     for (size_t i=0; i<m_attachmentBuffer.size(); i++)
         delete[] m_attachmentBuffer.at(i);
     m_attachmentBuffer.clear();
-    
-    /*
-    if (m_element0 != NULL) delete m_element0;
-    if (m_element1 != NULL) delete m_element1;
-    if (m_element2a != NULL) delete m_element2a;
-    if (m_element2b != NULL) delete m_element2b;
-    if (m_element3a != NULL) delete m_element3a;
-    if (m_element3b != NULL) delete m_element3b;
-    if (m_element4a != NULL) delete m_element4a;
-    if (m_element4b != NULL) delete m_element4b;
-    */
 }
 
 void MkvInterface::openWrite(const char *outputFile, const unsigned int w, const unsigned int h)
@@ -174,23 +164,6 @@ void MkvInterface::openWrite(const char *outputFile, const unsigned int w, const
 
         KaxVideoPixelWidth & MyTrack2PWidth = GetChild<KaxVideoPixelWidth>(MyTrack2Video);
         *(static_cast<EbmlUInteger *>(&MyTrack2PWidth)) = w;
-        
-        /*
-        // fill track 2 params -----------------------------------------------------
-        KaxTrackEntry & MetaTrack = GetNextChild<KaxTrackEntry>(MyTracks, *m_track);
-        //m_track->SetGlobalTimecodeScale(TIMECODE_SCALE);
-
-        KaxTrackNumber & MetaTrackNumber = GetChild<KaxTrackNumber>(MetaTrack);
-        *(static_cast<EbmlUInteger *>(&MetaTrackNumber)) = 99;
-
-        KaxTrackUID & MetaTrackUID = GetChild<KaxTrackUID>(MetaTrack);
-        *(static_cast<EbmlUInteger *>(&MetaTrackUID)) = 99;
-
-        *(static_cast<EbmlUInteger *>(&GetChild<KaxTrackType>(MetaTrack))) = track_complex;
-
-        KaxCodecID & MetaTrackCodecID = GetChild<KaxCodecID>(MetaTrack);
-        *static_cast<EbmlString *>(&MetaTrackCodecID) = "No codec";
-        */
 
         MyTracks.Render(*m_file, m_writeDefaultValues);
 
@@ -198,12 +171,6 @@ void MkvInterface::openWrite(const char *outputFile, const unsigned int w, const
 
         m_cues = &GetChild<KaxCues>(m_fileSegment);
         m_cues->SetGlobalTimecodeScale(TIMECODE_SCALE);
-        
-        /*
-        filepos_t CueSize = m_cues.Render(*m_file, m_writeDefaultValues);
-        m_metaSeek->IndexThis(m_cues, m_fileSegment);
-        */
-    
     }
     catch (std::exception & e)
     {
@@ -593,6 +560,7 @@ bool MkvInterface::findBlockGroup()
             KaxClusterTimecode & ClusterTime = *static_cast<KaxClusterTimecode*>(m_element2b);
             ClusterTime.ReadData(aStream->I_O());
             clusterTimecode = uint32(ClusterTime);
+            m_currentTime = clusterTimecode;
             segmentCluster->InitTimecode(clusterTimecode, TIMECODE_SCALE);
             
             if (m_verbose) fprintf(stderr, "\tCluster time code = %d\n", clusterTimecode);
@@ -639,11 +607,12 @@ const uint8 *MkvInterface::getFrame(unsigned int & buffer_size)
     else 
         fprintf(stderr, "Warning! A BlockGroup without a Block!\n");
     
-    /*
+    
     KaxBlockDuration * BlockDuration = static_cast<KaxBlockDuration *>(aBlockGroup.FindElt(KaxBlockDuration::ClassInfos));
     if (BlockDuration != NULL)
-        fprintf(stderr, "  Block Duration %d scaled ticks : %ld ns\n", uint32(*BlockDuration), uint32(*BlockDuration) * TIMECODE_SCALE);
-
+        m_frameDuration = uint32(*BlockDuration);
+    //    fprintf(stderr, "  Block Duration %d scaled ticks : %ld ns\n", uint32(*BlockDuration), uint32(*BlockDuration) * TIMECODE_SCALE);
+    /*
     KaxReferenceBlock * RefTime = static_cast<KaxReferenceBlock *>(aBlockGroup.FindElt(KaxReferenceBlock::ClassInfos));
     if (RefTime != NULL)
         fprintf(stderr, "  Reference frame at scaled (%d) timecode %ld\n", int32(*RefTime), int32(int64(*RefTime) * TIMECODE_SCALE));

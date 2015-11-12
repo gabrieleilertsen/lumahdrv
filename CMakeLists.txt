@@ -215,10 +215,15 @@ endif ( HAVE_OPENEXR )
 if( HAVE_OPENGL )
     add_executable(lumaplay
         lumaplay.cpp
+        ${PROJECT_SOURCE_DIR}/src/arg_parser.cpp
     )
     
     # Wrap shader code in to string file that can be loaded on compile time in lumaplay
-    set (py_cmd "fi = open('${PROJECT_SOURCE_DIR}/src/dequantizer.frag', 'r+')\; fo = open('${PROJECT_BINARY_DIR}/lumaplay_frag.h', 'w')\;\n")
+    set (py_cmd "fi = open('${PROJECT_SOURCE_DIR}/src/lumaplay_dequantizer.frag', 'r+')\; fo = open('${PROJECT_BINARY_DIR}/lumaplay_dequantizer_glsl.h', 'w')\;\n")
+    set (py_cmd "${py_cmd}for line in fi: fo.write( '\"{0:80s}\\\\n\"\\n'.format(line.rstrip()) )\;\n")
+    set (py_cmd "${py_cmd}fi.close()\; fo.close()\;")
+    
+    set (py_cmd "${py_cmd}fi = open('${PROJECT_SOURCE_DIR}/src/lumaplay_gui.frag', 'r+')\; fo = open('${PROJECT_BINARY_DIR}/lumaplay_gui_glsl.h', 'w')\;\n")
     set (py_cmd "${py_cmd}for line in fi: fo.write( '\"{0:80s}\\\\n\"\\n'.format(line.rstrip()) )\;\n")
     set (py_cmd "${py_cmd}fi.close()\; fo.close()\;")
 

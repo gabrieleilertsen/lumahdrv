@@ -80,10 +80,10 @@ struct LumaDecoderParamsBase
 class LumaDecoderBase
 {
 public:
-    LumaDecoderBase(const char *inputFile = NULL) : m_input(inputFile)
+    LumaDecoderBase(const char *inputFile = NULL, bool verbose = 0) : m_input(inputFile)
     {}
 
-    virtual bool initialize(const char *inputFile) = 0;
+    virtual bool initialize(const char *inputFile, bool verbose = 0) = 0;
     virtual bool run() = 0;
     void seekToTime(float tm, bool absolute = false)
     {
@@ -92,6 +92,7 @@ public:
     
     virtual LumaFrame *decode() = 0;
     LumaQuantizer *getQuantizer() { return &m_quant; }
+    MkvInterface *getReader() { return &m_reader; }
     LumaFrame *getFrame() { return &m_frame; }
     bool initialized() { return m_initialized; }
     
@@ -133,10 +134,10 @@ struct LumaDecoderParams : LumaDecoderParamsBase
 class LumaDecoder : public LumaDecoderBase
 {
 public:
-    LumaDecoder(const char *inputFile = NULL);
+    LumaDecoder(const char *inputFile = NULL, bool verbose = 0);
     ~LumaDecoder();
 
-    bool initialize(const char *inputFile);
+    bool initialize(const char *inputFile, bool verbose = 0);
     bool run();
     LumaFrame *decode()
     {

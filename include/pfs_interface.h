@@ -54,7 +54,7 @@
 #include <cstddef>
 #include <stdio.h>
 
-#include "frame.h"
+#include "luma_frame.h"
 
 namespace pfs
 {
@@ -75,8 +75,8 @@ public:
 
   ~PfsInterface();     
 
-  bool readFrame(const char *inputFile, Frame &frame);
-  bool writeFrame(const char *outputFile, Frame &frame);
+  bool readFrame(const char *inputFile, LumaFrame &frame);
+  bool writeFrame(const char *outputFile, LumaFrame &frame);
 };
 
 #endif //PFS_INTERFACE_H

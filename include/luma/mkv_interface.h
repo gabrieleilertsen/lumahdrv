@@ -88,6 +88,13 @@ public:
     void writeAttachments();
     const uint8 *getFrame(unsigned int & buffer_size);
     bool seekToTime(float tm, bool absolute = false);
+    
+    void setFramerate(float fps) { m_frameDuration = 1000.0f/fps; }
+    void setVerbose(bool verbose) { m_verbose = verbose; }
+    int getCurrentTime() { return m_currentTime; }
+    int getFrameDuration() { return m_frameDuration; }
+    int getDuration() { return m_duration; }
+    
 private:
     void flushCluster();
     bool findCluster();
@@ -145,7 +152,7 @@ private:
     int m_upperElementb;
     bool m_allowDummy;
     
-    int m_trackNr, m_trackUID;
+    int m_trackNr, m_trackUID, m_currentTime;
 };
 
 #endif //MKV_INTERFACE_H

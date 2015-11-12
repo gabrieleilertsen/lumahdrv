@@ -1,12 +1,4 @@
 /**
- * \class ExrInterface
- *
- * \brief Reading/writing of OpenEXR images.
- *
- * ExrInterface provides a minimal interface for reading and writing of OpenEXR
- * images.
- *
- *
  * This file is part of the LumaHDRv package.
  * -----------------------------------------------------------------------------
  * Copyright (c) 2015, The LumaHDRv authors.
@@ -26,7 +18,7 @@
  *    may be used to endorse or promote products derived from this software 
  *    without specific prior written permission.
  * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ‘AS IS’ 
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
  * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
@@ -39,25 +31,47 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * -----------------------------------------------------------------------------
  *
- * \author Gabriel Eilertsen, gabriel.eilertsen@liu.se
+ * @author Gabriel Eilertsen, gabriel.eilertsen@liu.se
  *
- * \date Oct 7 2015
+ * @date Nov 12 2015
  */
 
-#ifndef EXR_INTERFACE_H
-#define EXR_INTERFACE_H
+#version 120
 
-#include <cstddef>
-#include <stdio.h>
+uniform sampler2D texGUI;
+uniform float time, exposure;
+uniform int button;
 
-#include "luma_frame.h"
-
-class ExrInterface
+void main (void)  
 {
-public:
-    static bool readFrame(const char *inputFile, LumaFrame &frame);
-    static bool writeFrame(const char *outputFile, LumaFrame &frame);
-    static bool testFrame(LumaFrame &frame, unsigned int w = 1280, unsigned int h = 720);
-};
+    float x0 = 0.069, x1 = 0.92,
+          y0 = 0.25, y1 = 0.37;
+    
+    // Get pixel value from textures
+    vec2 texC = gl_TexCoord[0].st;
+    vec4 C = texture2D(texGUI, texC);
+    
+    // Time slider
+    if (button == 2) { y0 -= 0.02; y1 += 0.02; }
+    if (texC.s > x0 && texC.s < x0+time*(x1-x0) && texC.t < y1 && texC.t > y0)
+        C.rgb = vec3(0.3, 0.3, 1.0);
+    
+    // Exposure normalization
+    float expMin = -10.0, expMax = 10.0;
+    float e = max(0.0, min(1.0, (log2(exposure)-expMin)/(expMax-expMin)));
+    
+    // Exposure slider
+    y0 = 0.65; y1 = 0.77;
+    if (button == 3) { y0 -= 0.02; y1 += 0.02; }
+    if (texC.s > x0 && texC.s < x0+e*(x1-x0) && texC.t < y1 && texC.t > y0)
+        C.rgb = vec3(1.0, 0.3, 0.3);
+    
+    // Buttons highlighting
+    if ( ((button == 1 && texC.s < x0) || (button == 4 && texC.s > x0+(x1-x0)) ) && C.g > 0.3)
+        C.rgb = vec3(0.3, 0.3, C.b);
+    
+    
+    gl_FragColor = C;
+}
 
-#endif //EXR_INTERFACE_H
+

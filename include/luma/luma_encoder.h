@@ -60,11 +60,11 @@ struct LumaEncoderParamsBase
 {
     LumaEncoderParamsBase() : 
         quantizerScale(2), ptfBitDepth(11), colorBitDepth(8), preScaling(1.0f),
-        ptf(LumaQuantizer::PTF_PQ), colorSpace(LumaQuantizer::CS_LUV)
+        fps(25.0f), ptf(LumaQuantizer::PTF_PQ), colorSpace(LumaQuantizer::CS_LUV)
     {}
     
     unsigned int quantizerScale, ptfBitDepth, colorBitDepth;
-    float preScaling;
+    float preScaling, fps;
     LumaQuantizer::ptf_t ptf;
     LumaQuantizer::colorSpace_t colorSpace;
 };
@@ -81,7 +81,7 @@ struct LumaEncoderParamsBase
 class LumaEncoderBase
 {
 public:
-    virtual bool initialize(const char *outputFile, const unsigned int w, const unsigned int h)
+    virtual bool initialize(const char *outputFile, const unsigned int w, const unsigned int h, bool verbose = 0)
     {
         m_writer.openWrite(outputFile, w, h);
         return true;
@@ -133,7 +133,7 @@ public:
     LumaEncoder();
     ~LumaEncoder();
 
-    bool initialize(const char *outputFile, const unsigned int w, const unsigned int h);
+    bool initialize(const char *outputFile, const unsigned int w, const unsigned int h, bool verbose = 0);
     bool run();
     void setChannels(LumaFrame *frame);
     bool encode(LumaFrame *frame)

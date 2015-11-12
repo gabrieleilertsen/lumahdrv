@@ -2,7 +2,8 @@
 .SH NAME
 lumaplay \- Playback a high dynamic range (HDR) video that has been encoded with \fBlumaenc\fR
 .SH SYNOPSIS
-.B lumaplay \fIFILE\fR
+.B lumaplay --input \fIFILE\fR
+[\fIOPTIONS\fR ...]
 .SH DESCRIPTION
 .B lumaplay
 The application provides an interface for playback of high dynamic range (HDR) 
@@ -15,15 +16,41 @@ The video player can be controlled with the following keys:
   s                -  Seek to position indicated by mouse pointers horizontal position.
                       Left border of video is start of video, and right border is end 
                       of video.
-  +/-              -  Increase/decrease exposure
+  +                -  Increase exposure
+  -/=              -  Decrease exposure
   t                -  Apply simple sigmoid tone curve
+  l                -  Simulate low dynamic range (LDR) video
   z                -  Show timings
+
+.SH OPTIONS
+.TP
+.B \-i  \fIFILE\fR, \fB\-\-input \fIFILE
+HDR video input.
+
+.TP
+.B \-g  \fIVALUE\fR, \fB\-\-gamma \fIVALUE
+Set display gamma value.
+
+Default value is 2.2
+
+.TP
+.B \-s  \fIVALUE\fR, \fB\-\-scaling \fIVALUE
+Scaling to apply to video sequence.
+
+Default value is 1.0
+
+.TP
+.B \-fps  \fIVALUE\fR, \fB\-\-framerate \fIVALUE
+Playback framerate, in frames/s, overriding the encoding framerate.
+
+Default value is read from video file.
 
 .SH EXAMPLES
 .TP
-\fBlumaplay\fR hdr_video.mkv
+\fBlumaplay\fR -i hdr_video.mkv -s 0.2 -g 1.8 -fps 25
 
-Play HDR video hdr_video.mkv.
+Play HDR video hdr_video.mkv, with scaled intensity, custom gamma and custom
+framerate.
 
 .SH "SEE ALSO"
 .BR lumaenc (1)

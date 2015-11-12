@@ -45,6 +45,8 @@
 using namespace Imf;
 using namespace Imath;
 
+
+// Generate a test frame
 bool ExrInterface::testFrame(LumaFrame &frame, unsigned int w, unsigned int h)
 {
     frame.width = w;
@@ -67,6 +69,7 @@ bool ExrInterface::testFrame(LumaFrame &frame, unsigned int w, unsigned int h)
     return 1;
 }
 
+// Read an exr frame from file
 bool ExrInterface::readFrame(const char *inputFile, LumaFrame &frame)
 {
     try
@@ -150,6 +153,7 @@ bool ExrInterface::readFrame(const char *inputFile, LumaFrame &frame)
     return 1;
 }
 
+// Write an exr frame to file
 bool ExrInterface::writeFrame(const char *outputFile, LumaFrame &frame)
 {
     if (frame.buffer == NULL)
