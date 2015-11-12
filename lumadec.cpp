@@ -48,6 +48,7 @@
 #include "config.h"
 
 
+// Determine file extension
 bool hasExtension( const char *file_name, const char *extension )
 {
     if( file_name == NULL )
@@ -64,8 +65,10 @@ bool hasExtension( const char *file_name, const char *extension )
     return false;
 }
 
+// Parse parameter options from command line
 bool setParams(int argc, char* argv[], std::string &hdrFrames, std::string &inputFile, bool &verbose)
 {
+    // Application usage info
     std::string info = std::string("lumadec -- Decode a high dynamic range (HDR) video that has been encoded with the HDRv codec\n\n") +
                        std::string("Usage: lumadec --input <hdr_video> --output <hdr_frames>\n");
     std::string postInfo = std::string("\nExample: lumadec -i hdr_video.mkv -o hdr_frame_%05d.exr\n\n") +
@@ -160,3 +163,4 @@ int main(int argc, char* argv[])
     
     return 0;
 }
+

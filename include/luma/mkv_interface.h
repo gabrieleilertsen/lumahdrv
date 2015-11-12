@@ -93,6 +93,7 @@ public:
     void setVerbose(bool verbose) { m_verbose = verbose; }
     int getCurrentTime() { return m_currentTime; }
     int getFrameDuration() { return m_frameDuration; }
+    int getDuration() { return m_duration; }
     
 private:
     void flushCluster();

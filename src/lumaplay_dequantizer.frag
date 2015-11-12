@@ -40,7 +40,7 @@
 
 uniform sampler2D texC1, texC2, texC3;
 uniform sampler1D texM;
-uniform float maxVal, maxValColor, exposure, gamma, scaling;
+uniform float maxVal, maxValColor, exposure, gamma, scaling, strideRatio;
 
 uniform int colorSpaces[4], colorSpace, doTmo, ldrSim;
 
@@ -48,6 +48,7 @@ const mat3 xyz2rgb = mat3( 3.240708, -0.969257,  0.055636,
                           -1.537259,  1.875995, -0.203996,
                           -0.498570,  0.041555,  1.057069);
 
+// Perceptual quantizer
 float transformPQ(float val, bool encode)
 {
     const float L = 10000.0,
@@ -68,6 +69,13 @@ float transformPQ(float val, bool encode)
 
 void main (void)  
 {
+    // Ignore pixels outside image
+    if (gl_TexCoord[0].s > 1.0/strideRatio)
+    {
+        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+    }
+    
     // Get pixel value from textures
     vec3 C = vec3(texture2D(texC1, gl_TexCoord[0].st)[0],
                   texture2D(texC2, gl_TexCoord[0].st)[0],

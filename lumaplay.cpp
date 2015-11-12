@@ -39,6 +39,7 @@
 #include <cstdio>
 #include <math.h>
 #include <fstream>
+#include <iostream>
 
 #include <GL/glew.h>
 
@@ -54,328 +55,98 @@
 
 #include "config.h"
 
-const char* shader_src[] = {
-#include "lumaplay_frag.h"
+
+
+// === Necessary globals =======================================================
+
+namespace global
+{
+// Dequantization shader loaded on compile time
+const char* dequant_src[] = {
+#include "lumaplay_dequantizer_glsl.h"
 };
 
+// GUI shader loaded on compile time
+const char* gui_src[] = {
+#include "lumaplay_gui_glsl.h"
+};
+
+// GUI background texture loaded on compile time
+const unsigned char gui_texture[] = {
+#include "lumaplay_gui_texture.h"
+};
+
+// State variables for controlling interaction in GLUT callback functions
+// Need to be defined globally, since variables cannot be passed to GLUT callbacks
 struct GlutState
 {
     GlutState() : pausePlayback(0), doTmo(0), seek(0), showTimings(0), ldrSim(0),
-        dispTimeTot(0.0f), totTimeTot(0.0f), exposure(1.0f), fps(-1.0f), frameDuration(40.0f), frameNr(0)
+        mousePressL1(0), mousePressL2(0), fullScreen(0), firstClick(0),
+        dispTimeTot(0.0f), totTimeTot(0.0f), exposure(1.0f), fps(-1.0f), 
+        frameDuration(40.0f), inactiveTime(-1e10f), guiTime(2000.0f), 
+        frameNr(0), guiButton(0)
     {}
     
-    bool hbd, pausePlayback, doTmo, seek, showTimings, ldrSim;
-    float dispTimeTot, totTimeTot, exposure, fps, frameDuration;
-    unsigned int windNr, stride[3], width[3], height[3], frameNr;
+    bool hbd, pausePlayback, doTmo, seek, showTimings, ldrSim, mousePressL1, 
+         mousePressL2, fullScreen, firstClick;
+         
+    float dispTimeTot, totTimeTot, exposure, fps, frameDuration,
+          duration, inactiveTime, guiTime;
+          
+    unsigned int windNr, stride[3], frameNr, guiButton,
+                 width[3], height[3], widthGUI, heightGUI, widthWin,
+                 heightWin, widthWin0, heightWin0,
+                 sx, sy, x0, y0, sxGUI, syGUI, x0GUI, y0GUI,
+                 Sx0, Sx1, Sx2, Sx3, Sy0, Sy1;
+                 
     timeval start1, start2, stop;
     
-    GLfloat strideRatio;
     LumaDecoder decoder;
     
-    GLuint program, texC1, texC2, texC3, texM;
-} glutState;
-
-bool getFrame()
-{
-    if (!glutState.decoder.run())
-    {
-        glutState.decoder.seekToTime(0);
-        if (!glutState.decoder.run())
-            return 0;
-    }
-    
-    glutState.decoder.getFrame();
-    glutState.frameDuration = glutState.decoder.getReader()->getFrameDuration();
-    
-    return 1;
+    GLfloat strideRatio;
+    GLuint dequantProg, guiProg, texC1, texC2, texC3, texGUI1, texGUI2, texM;
+} state;
 }
 
-int loadTexture(GLuint t)
-{
-    GLuint object;
-    glGenTextures(1,&object);
-    glBindTexture(t, object);
-    glTexParameterf(t,GL_TEXTURE_MIN_FILTER,GL_LINEAR); //GL_NEAREST);
-    glTexParameterf(t,GL_TEXTURE_MAG_FILTER,GL_LINEAR); //GL_NEAREST);
-    glTexParameterf(t,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-    glTexParameterf(t,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-    return object;
-}
+// =============================================================================
 
-void init()
-{
-    glClearColor(0.0,0.0,0.0,0.0);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0.0,100,100,1.0,-1.0,1.0);
-    glEnable(GL_BLEND);
-    glEnable(GL_TEXTURE_2D);
-    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-    
-    glutState.texC1 = loadTexture(GL_TEXTURE_2D);
-    glutState.texC2 = loadTexture(GL_TEXTURE_2D);
-    glutState.texC3 = loadTexture(GL_TEXTURE_2D);
-    glutState.texM = loadTexture(GL_TEXTURE_1D);
-    
-    glBindTexture(GL_TEXTURE_1D,glutState.texM);
-    glTexImage1D(GL_TEXTURE_1D,0,GL_R32F,glutState.decoder.getQuantizer()->getSize(),0,GL_RED,GL_FLOAT,glutState.decoder.getQuantizer()->getMapping());
-}
 
-bool setupShader(GLuint &shader, float gammaVal, float userScaling)
-{
-    shader = glCreateShader(GL_FRAGMENT_SHADER);
-    
-    /*
-    std::ifstream t;
-    char str[1000];
-    snprintf(str, 999, "%s/src/dequantizer.frag", SOURCE_DIR);
-    t.open(str);
-    if (!t)
-    {
-        snprintf(str, 999, "Unable to load dequantization shader from '%s/src/dequantizer.frag'", SOURCE_DIR);
-        throw LumaException(str);
-    }
-    t.seekg(0, std::ios::end);
-    int length = t.tellg();
-    t.seekg(0, std::ios::beg);
-    char *buffer = new char[length];
-    t.read(buffer, length);
-    t.close();
-    */
-    
-    glShaderSource(shader, 1, (const GLchar**)(&shader_src), NULL);
-    glCompileShader(shader);
-    
-    //delete[] buffer;
-    
-    GLint flag;
-    
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &flag);
-    
-    if (!flag)
-    {
-        fprintf(stderr, "Error! Failed to compile shader.\n");
-        
-        GLint length;
-        GLchar* log;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
-        log = (GLchar*)malloc(length);
-        glGetShaderInfoLog(shader, length, &length, log);
-        fprintf(stderr, "\n%s\n", log);
-        
-        return 0;
-    }
-    
-    glutState.program = glCreateProgram();
-    
-    glAttachShader(glutState.program, shader);
-    glLinkProgram(glutState.program);
-    
-    glGetProgramiv(glutState.program, GL_LINK_STATUS, &flag);
-    
-    if (!flag)
-    {
-        fprintf(stderr, "Error! Failed to link program.\n");
-        
-        GLint length;
-        GLchar* log;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
-        log = (GLchar*)malloc(length);
-        glGetShaderInfoLog(shader, length, &length, log);
-        fprintf(stderr, "\n%s\n", log);
-        
-        return 0;
-    }
-    
-    glUseProgram(glutState.program);
-    
-    glUniform1i(glGetUniformLocation(glutState.program, "texC1"), 0);
-    glUniform1i(glGetUniformLocation(glutState.program, "texC2"), 1);
-    glUniform1i(glGetUniformLocation(glutState.program, "texC3"), 2);
-    glUniform1i(glGetUniformLocation(glutState.program, "texM"), 3);
-    
-    LumaDecoderParams params = glutState.decoder.getParams();
-    
-    float normalization = glutState.hbd ? 65535.0f : 255.0f;
-    float maxVal = glutState.decoder.getQuantizer()->getSize() / normalization;
-    float maxValColor = (pow(2, params.colorBitDepth) - 1) / normalization;
-    unsigned int colorSpaces[] = {LumaQuantizer::CS_LUV, LumaQuantizer::CS_RGB, LumaQuantizer::CS_YCBCR, LumaQuantizer::CS_XYZ};
-    unsigned int colorSpace = params.colorSpace;
-    
-    glUniform1f(glGetUniformLocation(glutState.program, "maxVal"), maxVal);
-    glUniform1f(glGetUniformLocation(glutState.program, "maxValColor"), maxValColor);
-    glUniform1f(glGetUniformLocation(glutState.program, "exposure"), glutState.exposure);
-    glUniform1f(glGetUniformLocation(glutState.program, "gamma"), gammaVal);
-    glUniform1f(glGetUniformLocation(glutState.program, "scaling"), params.preScaling / userScaling);
-    glUniform1iv(glGetUniformLocation(glutState.program, "colorSpaces"), 4, (GLint*)(colorSpaces));
-    glUniform1i(glGetUniformLocation(glutState.program, "colorSpace"), colorSpace);
-    glUniform1i(glGetUniformLocation(glutState.program, "doTmo"), glutState.doTmo);
-    glUniform1i(glGetUniformLocation(glutState.program, "ldrSim"), glutState.ldrSim);
-    
-    return 1;
-}
 
-void display()
-{
-    if (glutState.frameNr > 0 && !glutState.pausePlayback)
-    {
-        gettimeofday(&glutState.stop, NULL);
-        
-        float dispTime = (glutState.stop.tv_sec-glutState.start2.tv_sec)*1000.0f + (glutState.stop.tv_usec-glutState.start2.tv_usec)/1000.0f;
-        float totTime = (glutState.stop.tv_sec-glutState.start1.tv_sec)*1000.0f + (glutState.stop.tv_usec-glutState.start1.tv_usec)/1000.0f;
-        
-        glutState.dispTimeTot = (glutState.dispTimeTot*glutState.frameNr +  dispTime)/ (glutState.frameNr+1);
-        glutState.totTimeTot = (glutState.totTimeTot*glutState.frameNr +  totTime)/ (glutState.frameNr+1);
-        
-        if (glutState.showTimings)
-        {
-            fprintf(stderr, "DISPLAY TIME: %f (avg = %f)\n", dispTime, glutState.dispTimeTot);
-            fprintf(stderr, "TOTAL TIME:   %f (avg = %f), %f fps\n", totTime, glutState.totTimeTot, 1000.0f/totTime);
-        }
-        
-        float sleepTime = glutState.frameDuration-totTime, t = 0.0f;
-        
-        if (glutState.fps > 0.0f)
-            sleepTime = 1000.0f/glutState.fps-totTime;
-        
-        fprintf(stderr, "st = %f\n", sleepTime);
-        while (sleepTime > t)
-        {
-            gettimeofday(&glutState.start1, NULL);
-            t = (glutState.start1.tv_sec-glutState.stop.tv_sec)*1000.0f + (glutState.start1.tv_usec-glutState.stop.tv_usec)/1000.0f;
-        }
-    }
-    
-    gettimeofday(&glutState.start1, NULL);
-    
-    bool gotFrame = 0;
-    
-    if (!glutState.pausePlayback || glutState.seek)
-    {
-        gotFrame = getFrame();
-        glutState.seek = false;
-    }
-    
-    gettimeofday(&glutState.start2, NULL);
-    
-    glClear(GL_COLOR_BUFFER_BIT);
-    
-    if (gotFrame)
-    {
-        glutState.frameNr++;
-        if (glutState.hbd)
-        {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D,glutState.texC1);
-            glTexImage2D(GL_TEXTURE_2D,0,GL_R16,glutState.stride[0]/2,glutState.height[0],0,GL_RED,GL_UNSIGNED_SHORT,(unsigned short*)(glutState.decoder.getBuffer()[0]));
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D,glutState.texC2);
-            glTexImage2D(GL_TEXTURE_2D,0,GL_R16,glutState.stride[1]/2,glutState.height[1],0,GL_RED,GL_UNSIGNED_SHORT,(unsigned short*)(glutState.decoder.getBuffer()[1]));
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D,glutState.texC3);
-            glTexImage2D(GL_TEXTURE_2D,0,GL_R16,glutState.stride[2]/2,glutState.height[2],0,GL_RED,GL_UNSIGNED_SHORT,(unsigned short*)(glutState.decoder.getBuffer()[2]));
-        }
-        else
-        {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D,glutState.texC1);
-            glTexImage2D(GL_TEXTURE_2D,0,GL_R8,glutState.stride[0],glutState.height[0],0,GL_RED,GL_UNSIGNED_BYTE,glutState.decoder.getBuffer()[0]);
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D,glutState.texC2);
-            glTexImage2D(GL_TEXTURE_2D,0,GL_R8,glutState.stride[1],glutState.height[1],0,GL_RED,GL_UNSIGNED_BYTE,glutState.decoder.getBuffer()[1]);
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D,glutState.texC3);
-            glTexImage2D(GL_TEXTURE_2D,0,GL_R8,glutState.stride[2],glutState.height[2],0,GL_RED,GL_UNSIGNED_BYTE,glutState.decoder.getBuffer()[2]);
-        }
-        
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_1D,glutState.texM);
-    }
-    
-    glBegin(GL_QUADS);
-        glTexCoord2f(0,0);
-        glVertex2f(0,1);
-        glTexCoord2f(1,0);
-        glVertex2f(100*glutState.strideRatio,1);
-        glTexCoord2f(1,1);
-        glVertex2f(100*glutState.strideRatio,100);
-        glTexCoord2f(0,1);
-        glVertex2f(0,100);
-    glEnd();
-    //glFlush();
-    glutSwapBuffers();
-    
-    if (gotFrame && !glutState.pausePlayback)
-        glutPostRedisplay();
-}
+// === Setup and initialization ================================================
+int loadTexture(GLuint t);
+bool setupShader(GLuint &shader, GLuint &program, const GLchar** shader_src);
+void setupGUI();
+void init(float gammaVal, float userScaling);
+// =============================================================================
 
-void reshape(int w, int h)
-{
-    int sx = w, sy = h;
-    if ((float)w/h > (float)glutState.width[0]/glutState.height[0])
-        sx = (h*glutState.width[0])/glutState.height[0];
-    else
-        sy = (w*glutState.height[0])/glutState.width[0];
-    
-    int x0 = (w-sx)/2;
-    int y0 = (h-sy)/2;
-        
-    glViewport(x0,y0,sx,sy);
-}
 
-void keyboard(unsigned char key, int x, int)
-{
-    //fprintf(stderr, "%d, (%f, %f)\n", key, float(x)/glutState.width[0], float(y)/glutState.height[0]);
-    
-    switch(key)
-    {
-    case 27:
-    case 17:
-    case 23:
-        glutDestroyWindow(glutState.windNr);
-        exit(0);
-        break;
-    case ' ':
-        glutState.pausePlayback = !glutState.pausePlayback;
-        glutPostRedisplay();
-        break;
-    case '+':
-    case '=':
-        glutState.exposure *= 1.5f;
-        glUniform1f(glGetUniformLocation(glutState.program, "exposure"), glutState.exposure);
-        glutPostRedisplay();
-        break;
-    case '-':
-        glutState.exposure /= 1.5f;
-        glUniform1f(glGetUniformLocation(glutState.program, "exposure"), glutState.exposure);
-        glutPostRedisplay();
-        break;
-    case 't':
-        glutState.doTmo = !glutState.doTmo;
-        glUniform1i(glGetUniformLocation(glutState.program, "doTmo"), glutState.doTmo);
-        glutPostRedisplay();
-        break;
-    case 'l':
-        glutState.ldrSim = !glutState.ldrSim;
-        glUniform1i(glGetUniformLocation(glutState.program, "ldrSim"), glutState.ldrSim);
-        glutPostRedisplay();
-        break;
-    case 's':
-        glutState.decoder.seekToTime(float(x)/glutState.width[0]);
-        glutState.seek = true;
-        glutPostRedisplay();
-        break;
-    case 'z':
-        glutState.frameNr = 0;
-        glutState.showTimings = !glutState.showTimings;
-        break;
-    }
-}
+
+// === Utility functions for use during playback ===============================
+bool getFrame();
+void resetGuiTime();
+void seekToTime(float time);
+bool positionSlider(unsigned int x);
+// =============================================================================
+
+
+
+// === Callback functions ======================================================
+void display();
+void reshape(int w, int h);
+void doubleClickRegistration(int);
+void mouse(int button, int state, int xi, int yi);
+void mouseMotion(int x, int);
+void mousePassiveMotion(int xi, int yi);
+void keyboard(unsigned char key, int x, int);
+// =============================================================================
+
+
+
+
 
 int main(int argc, char** argv)
 {
     std::string inputFile;
-    GLuint shader;
     float gammaVal = 2.2f, userScaling = 1.0f;
 
     // Application usage info
@@ -401,53 +172,56 @@ int main(int argc, char** argv)
         ArgParser argHolder(info, postInfo);
         
         // Input arguments
-        argHolder.add(&inputFile,     "--input",     "-i",   "Input HDR video", 0);
-        argHolder.add(&gammaVal,      "--gamma",     "-g",   "Display gamma value", 2.2f);
-        argHolder.add(&userScaling,   "--scaling",   "-s",   "Scaling to apply to video", 1.0f);
-        argHolder.add(&glutState.fps, "--framerate", "-fps", "Framerate (frames/s)", glutState.fps);
+        argHolder.add(&inputFile,         "--input",     "-i",   "Input HDR video", 0);
+        argHolder.add(&gammaVal,          "--gamma",     "-g",   "Display gamma value", 2.2f);
+        argHolder.add(&userScaling,       "--scaling",   "-s",   "Scaling to apply to video", 1.0f);
+        argHolder.add(&global::state.fps, "--framerate", "-fps", "Framerate (frames/s)", global::state.fps);
         
         // Parse arguments
         if (!argHolder.read(argc, argv))
             return 0;    
         
         // Initialize decoder    
-        if (!glutState.decoder.initialize(inputFile.c_str()))
+        if (!global::state.decoder.initialize(inputFile.c_str()))
             return 1;
-    
-        LumaDecoderParams params = glutState.decoder.getParams();
         
-        glutState.hbd = params.highBitDepth;
-        glutState.stride[0] = params.stride[0];
-        glutState.stride[1] = params.stride[1];
-        glutState.stride[2] = params.stride[2];
-        glutState.width[0] = params.width[0];
-        glutState.width[1] = params.width[1];
-        glutState.width[2] = params.width[2];
-        glutState.height[0] = params.height[0];
-        glutState.height[1] = params.height[1];
-        glutState.height[2] = params.height[2];
+        // Store some useful decoder parameters
+        LumaDecoderParams params = global::state.decoder.getParams();
+        global::state.hbd = params.highBitDepth;
+        global::state.stride[0] = params.stride[0];
+        global::state.stride[1] = params.stride[1];
+        global::state.stride[2] = params.stride[2];
+        global::state.width[0] = params.width[0];
+        global::state.width[1] = params.width[1];
+        global::state.width[2] = params.width[2];
+        global::state.height[0] = params.height[0];
+        global::state.height[1] = params.height[1];
+        global::state.height[2] = params.height[2];
+        global::state.duration = global::state.decoder.getReader()->getDuration();
+        global::state.strideRatio = ((float)global::state.stride[0])/global::state.width[0];
+        if (global::state.hbd) global::state.strideRatio /= 2;
         
-        glutState.strideRatio = ((float)glutState.stride[0])/glutState.width[0];
-        if (glutState.hbd) glutState.strideRatio /= 2;
-        
+        // Initialize GLUT and GLEW
         glutInit(&argc, argv);
         glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-        glutInitWindowSize(glutState.width[0], glutState.height[0]);
+        glutInitWindowSize(global::state.width[0], global::state.height[0]);
         glutInitWindowPosition(100, 100);
-        glutState.windNr = glutCreateWindow("Luma HDRv player");
+        global::state.windNr = glutCreateWindow("Luma HDRv player");
+        glewInit();
+        fprintf(stderr, "OpenGL version : %s\n",  (char*)glGetString(GL_VERSION));
         
-        init();
+        // Initialize textures, shaders, etc.
+        init(gammaVal, userScaling);
+        
+        // Specify GLUT callback functions
         glutDisplayFunc(display);
         glutReshapeFunc(reshape);
         glutKeyboardFunc(keyboard);
+        glutMouseFunc(mouse);
+        glutMotionFunc(mouseMotion);
+        glutPassiveMotionFunc(mousePassiveMotion);
         
-        fprintf(stderr, "OpenGL version : %s\n",  (char*)glGetString(GL_VERSION));
-        
-        glewInit();
-        
-        if (!setupShader(shader, gammaVal, userScaling))
-            return 1;
-        
+        // Start the rendering loop
         glutMainLoop();
     }
     catch (ParserException &e)
@@ -468,4 +242,612 @@ int main(int argc, char** argv)
     
     return 0;
 }
+
+
+
+
+
+// === Setup and initialization ================================================
+
+// Setup a GL texture
+int loadTexture(GLuint t)
+{
+    GLuint object;
+    glGenTextures(1,&object);
+    glBindTexture(t, object);
+    glTexParameterf(t,GL_TEXTURE_MIN_FILTER,GL_LINEAR); //GL_NEAREST);
+    glTexParameterf(t,GL_TEXTURE_MAG_FILTER,GL_LINEAR); //GL_NEAREST);
+    glTexParameterf(t,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+    glTexParameterf(t,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+    return object;
+}
+
+// Setup a GLSL shader
+bool setupShader(GLuint &shader, GLuint &program, const GLchar** shader_src)
+{
+    shader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(shader, 1, shader_src, NULL);
+    glCompileShader(shader);
+    
+    GLint flag;
+    
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &flag);
+    
+    if (!flag)
+    {
+        fprintf(stderr, "Error! Failed to compile shader.\n");
+        
+        GLint length;
+        GLchar* log;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+        log = (GLchar*)malloc(length);
+        glGetShaderInfoLog(shader, length, &length, log);
+        fprintf(stderr, "\n%s\n", log);
+        
+        return 0;
+    }
+    
+    program = glCreateProgram();
+    
+    glAttachShader(program, shader);
+    glLinkProgram(program);
+    
+    glGetProgramiv(program, GL_LINK_STATUS, &flag);
+    
+    if (!flag)
+    {
+        fprintf(stderr, "Error! Failed to link program.\n");
+        
+        GLint length;
+        GLchar* log;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+        log = (GLchar*)malloc(length);
+        glGetShaderInfoLog(shader, length, &length, log);
+        fprintf(stderr, "\n%s\n", log);
+        
+        return 0;
+    }
+    
+    return 1;
+}
+
+// Setup textures for GUI
+void setupGUI()
+{
+    // First indices are texture size
+    unsigned int sx = global::gui_texture[0]|global::gui_texture[1]<<8,
+                 sy = global::gui_texture[2]|global::gui_texture[3]<<8, 
+                 sz = global::gui_texture[4];
+    
+    // Texture format depends on number of channels
+    GLint format;
+    switch (sz)
+    {
+    case 1:
+        format = GL_RED;
+        break;
+    case 3:
+        format = GL_RGB;
+        break;
+    case 4:
+        format = GL_RGBA;
+        break;
+    default:
+        throw LumaException("unsupported number of channels in GUI texture");
+        break;
+    }
+    
+    global::state.texGUI1 = loadTexture(GL_TEXTURE_2D);
+    global::state.texGUI2 = loadTexture(GL_TEXTURE_2D);
+    
+    // Initialize textures
+    glBindTexture(GL_TEXTURE_2D,global::state.texGUI1);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, sx, sy, 0, format, GL_UNSIGNED_BYTE, global::gui_texture+5);
+    
+    glBindTexture(GL_TEXTURE_2D,global::state.texGUI2);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, sx, sy, 0, format, GL_UNSIGNED_BYTE, global::gui_texture+sx*sy*sz+5);
+    
+    global::state.widthGUI = sx;
+    global::state.heightGUI = sy;
+}
+
+// Initialization of e.g. textures and shaders
+void init(float gammaVal, float userScaling)
+{
+    glClearColor(0.0,0.0,0.0,0.0);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0.0,100,100,1.0,-1.0,1.0);
+    glEnable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    
+    global::state.texC1 = loadTexture(GL_TEXTURE_2D);
+    global::state.texC2 = loadTexture(GL_TEXTURE_2D);
+    global::state.texC3 = loadTexture(GL_TEXTURE_2D);
+    global::state.texM = loadTexture(GL_TEXTURE_1D);
+    
+    glBindTexture(GL_TEXTURE_1D,global::state.texM);
+    glTexImage1D(GL_TEXTURE_1D,0,GL_R32F,global::state.decoder.getQuantizer()->getSize(),
+                 0,GL_RED,GL_FLOAT,global::state.decoder.getQuantizer()->getMapping());
+    
+    // Load textures for GUI
+    setupGUI();
+    
+    GLuint shaderDequant, shaderGUI;
+    LumaDecoderParams params = global::state.decoder.getParams();
+    
+    // Dequantization shader
+    if (!setupShader(shaderDequant, global::state.dequantProg, (const GLchar**)(&global::dequant_src)))
+        throw LumaException("error in dequantization shader");
+    
+    // GUI shader
+    if (!setupShader(shaderGUI, global::state.guiProg, (const GLchar**)(&global::gui_src)))
+        throw LumaException("error in GUI shader");
+    
+    // Dequantization shader params
+    glUseProgram(global::state.dequantProg);
+    glUniform1i(glGetUniformLocation(global::state.dequantProg, "texC1"), 0);
+    glUniform1i(glGetUniformLocation(global::state.dequantProg, "texC2"), 1);
+    glUniform1i(glGetUniformLocation(global::state.dequantProg, "texC3"), 2);
+    glUniform1i(glGetUniformLocation(global::state.dequantProg, "texM"), 3);
+    
+    float normalization = global::state.hbd ? 65535.0f : 255.0f;
+    float maxVal = global::state.decoder.getQuantizer()->getSize() / normalization;
+    float maxValColor = (pow(2, params.colorBitDepth) - 1) / normalization;
+    unsigned int colorSpaces[] = {LumaQuantizer::CS_LUV, LumaQuantizer::CS_RGB,
+                                  LumaQuantizer::CS_YCBCR, LumaQuantizer::CS_XYZ};
+    unsigned int colorSpace = params.colorSpace;
+    
+    glUniform1f(glGetUniformLocation(global::state.dequantProg, "strideRatio"), global::state.strideRatio);
+    glUniform1f(glGetUniformLocation(global::state.dequantProg, "maxVal"), maxVal);
+    glUniform1f(glGetUniformLocation(global::state.dequantProg, "maxValColor"), maxValColor);
+    glUniform1f(glGetUniformLocation(global::state.dequantProg, "exposure"), global::state.exposure);
+    glUniform1f(glGetUniformLocation(global::state.dequantProg, "gamma"), gammaVal);
+    glUniform1f(glGetUniformLocation(global::state.dequantProg, "scaling"), params.preScaling / userScaling);
+    glUniform1iv(glGetUniformLocation(global::state.dequantProg, "colorSpaces"), 4, (GLint*)(colorSpaces));
+    glUniform1i(glGetUniformLocation(global::state.dequantProg, "colorSpace"), colorSpace);
+    glUniform1i(glGetUniformLocation(global::state.dequantProg, "doTmo"), global::state.doTmo);
+    glUniform1i(glGetUniformLocation(global::state.dequantProg, "ldrSim"), global::state.ldrSim);
+    
+    // GUI shader params
+    glUseProgram(global::state.guiProg);
+    glUniform1i(glGetUniformLocation(global::state.guiProg, "texGUI"), 4);
+    glUniform1f(glGetUniformLocation(global::state.guiProg, "time"), 0.0f);
+    glUniform1i(glGetUniformLocation(global::state.guiProg, "button"), 0);
+}
+
+// =============================================================================
+
+
+
+
+
+// === Utility functions for use during playback ===============================
+
+// Get a frame from the decoder
+bool getFrame()
+{
+    // End of clip. Start from first frame
+    if (!global::state.decoder.run())
+    {
+        global::state.decoder.seekToTime(0);
+        global::state.inactiveTime -= (global::state.frameNr-1)*global::state.frameDuration;
+        global::state.frameNr = 0;
+        if (!global::state.decoder.run())
+            return 0;
+    }
+    
+    // Get frame and frame duration
+    global::state.decoder.getFrame();
+    global::state.frameDuration = global::state.decoder.getReader()->getFrameDuration();
+    global::state.frameNr++;
+    
+    return 1;
+}
+
+// inactiveTime stores the timestamp for the last interaction with the window
+void resetGuiTime()
+{
+    global::state.inactiveTime = (global::state.frameNr-1)*global::state.frameDuration;
+}
+
+// Seeking to a time in the video sequence
+void seekToTime(float time)
+{
+    global::state.decoder.seekToTime(time);
+    global::state.frameNr = time*(global::state.duration-global::state.frameDuration)
+                                /global::state.frameDuration + 1;
+    global::state.seek = true;
+    resetGuiTime();
+    glutPostRedisplay();
+}
+
+// Interaction with time and exposure sliders
+bool positionSlider(unsigned int x)
+{
+    if (x > global::state.Sx1 && x < global::state.Sx2)
+    {
+        if (global::state.mousePressL1)
+        {
+            seekToTime(float(x-global::state.Sx1)/(global::state.Sx2-global::state.Sx1));
+            return 1;
+        }
+        else if (global::state.mousePressL2)
+        {
+            global::state.exposure = pow(2.0f, 20*float(x-global::state.Sx1)
+                /(global::state.Sx2-global::state.Sx1) - 10);
+            glUniform1f(glGetUniformLocation(global::state.dequantProg, "exposure"), global::state.exposure);
+            resetGuiTime();
+            glutPostRedisplay();
+            return 1;
+        }
+    }
+    
+    return 0;
+}
+
+// =============================================================================
+
+
+
+
+
+// === Callback functions ======================================================
+
+// On redraw
+void display()
+{
+    // Timings, for information and synchronization of framerate
+    if (global::state.frameNr > 0 && !global::state.pausePlayback)
+    {
+        gettimeofday(&global::state.stop, NULL);
+        
+        float dispTime = (global::state.stop.tv_sec-global::state.start2.tv_sec)*1000.0f 
+                       + (global::state.stop.tv_usec-global::state.start2.tv_usec)/1000.0f;
+        float totTime = (global::state.stop.tv_sec-global::state.start1.tv_sec)*1000.0f
+                      + (global::state.stop.tv_usec-global::state.start1.tv_usec)/1000.0f;
+        
+        global::state.dispTimeTot = (global::state.dispTimeTot*global::state.frameNr +  dispTime)
+                                   /(global::state.frameNr+1);
+        global::state.totTimeTot = (global::state.totTimeTot*global::state.frameNr +  totTime)
+                                   /(global::state.frameNr+1);
+        
+        if (global::state.showTimings)
+        {
+            fprintf(stderr, "DISPLAY TIME: %f (avg = %f)\n",
+                    dispTime, global::state.dispTimeTot);
+            fprintf(stderr, "TOTAL TIME:   %f (avg = %f), %f fps\n",
+                    totTime, global::state.totTimeTot, 1000.0f/totTime);
+        }
+        
+        // Waiting time for next frame
+        float sleepTime = global::state.frameDuration-totTime, t = 0.0f;
+        if (global::state.fps > 0.0f)
+            sleepTime = 1000.0f/global::state.fps-totTime;
+        
+        // Very ugly way to accomplish the sought frame rate
+        //TODO: use glutTimerFunc instead...?
+        while (sleepTime > t)
+        {
+            gettimeofday(&global::state.start1, NULL);
+            t = (global::state.start1.tv_sec-global::state.stop.tv_sec)*1000.0f
+              + (global::state.start1.tv_usec-global::state.stop.tv_usec)/1000.0f;
+        }
+    }
+    
+    gettimeofday(&global::state.start1, NULL);
+    
+    bool gotFrame = 0;
+    
+    // Get next frame, if video is not paused
+    if (!global::state.pausePlayback || global::state.seek)
+    {
+        gotFrame = getFrame();
+        global::state.seek = false;
+    }
+    
+    gettimeofday(&global::state.start2, NULL);
+    
+    glClear(GL_COLOR_BUFFER_BIT);
+    
+    // Load frame to textures, one per color channel
+    if (gotFrame)
+    {
+        if (global::state.hbd)
+        {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D,global::state.texC1);
+            glTexImage2D(GL_TEXTURE_2D,0,GL_R16,global::state.stride[0]/2,global::state.height[0],
+                         0,GL_RED,GL_UNSIGNED_SHORT,(unsigned short*)(global::state.decoder.getBuffer()[0]));
+            
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D,global::state.texC2);
+            glTexImage2D(GL_TEXTURE_2D,0,GL_R16,global::state.stride[1]/2,global::state.height[1],
+                         0,GL_RED,GL_UNSIGNED_SHORT,(unsigned short*)(global::state.decoder.getBuffer()[1]));
+            
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D,global::state.texC3);
+            glTexImage2D(GL_TEXTURE_2D,0,GL_R16,global::state.stride[2]/2,global::state.height[2],
+                         0,GL_RED,GL_UNSIGNED_SHORT,(unsigned short*)(global::state.decoder.getBuffer()[2]));
+        }
+        else
+        {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D,global::state.texC1);
+            glTexImage2D(GL_TEXTURE_2D,0,GL_R8,global::state.stride[0],global::state.height[0],
+                         0,GL_RED,GL_UNSIGNED_BYTE,global::state.decoder.getBuffer()[0]);
+            
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D,global::state.texC2);
+            glTexImage2D(GL_TEXTURE_2D,0,GL_R8,global::state.stride[1],global::state.height[1],
+                         0,GL_RED,GL_UNSIGNED_BYTE,global::state.decoder.getBuffer()[1]);
+            
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D,global::state.texC3);
+            glTexImage2D(GL_TEXTURE_2D,0,GL_R8,global::state.stride[2],global::state.height[2],
+                         0,GL_RED,GL_UNSIGNED_BYTE,global::state.decoder.getBuffer()[2]);
+        }
+        
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_1D,global::state.texM);
+    }
+    
+    glActiveTexture(GL_TEXTURE4);
+    
+    // GUI texture
+    if (global::state.pausePlayback)
+        glBindTexture(GL_TEXTURE_2D,global::state.texGUI2);
+    else
+        glBindTexture(GL_TEXTURE_2D,global::state.texGUI1);
+    
+    // Run dequantization shader on the frame textures
+    glUseProgram(global::state.dequantProg);
+    glBegin(GL_QUADS);
+        glTexCoord2f(0,0);
+        glVertex2f(global::state.x0,global::state.y0);
+        glTexCoord2f(1,0);
+        glVertex2f(global::state.x0 + global::state.sx*global::state.strideRatio,global::state.y0);
+        glTexCoord2f(1,1);
+        glVertex2f(global::state.x0 + global::state.sx*global::state.strideRatio, global::state.y0 + global::state.sy);
+        glTexCoord2f(0,1);
+        glVertex2f(global::state.x0, global::state.y0 + global::state.sy);
+    glEnd();
+    
+    // Run GUI shader on the GUI texture, if it is supposed to be displayed
+    if ((global::state.frameNr-1)*global::state.frameDuration - global::state.inactiveTime < global::state.guiTime)
+    {
+        glUseProgram(global::state.guiProg);
+        glUniform1f(glGetUniformLocation(global::state.guiProg, "time"),
+            std::min(1.0f, (global::state.frameNr-1)*global::state.frameDuration
+                           /(global::state.duration-global::state.frameDuration)));
+        glUniform1f(glGetUniformLocation(global::state.guiProg, "exposure"), global::state.exposure);
+        glUniform1i(glGetUniformLocation(global::state.guiProg, "button"), global::state.guiButton);
+        glBegin(GL_QUADS);
+            glTexCoord2f(0,0);
+            glVertex2f(global::state.x0GUI,global::state.y0GUI);
+            glTexCoord2f(1,0);
+            glVertex2f(global::state.x0GUI + global::state.sxGUI,global::state.y0GUI);
+            glTexCoord2f(1,1);
+            glVertex2f(global::state.x0GUI + global::state.sxGUI,
+                       global::state.y0GUI + global::state.syGUI);
+            glTexCoord2f(0,1);
+            glVertex2f(global::state.x0GUI, global::state.y0GUI + global::state.syGUI);
+        glEnd();
+        
+        glUseProgram(global::state.dequantProg);
+    }
+    
+    //glFlush();
+    glutSwapBuffers();
+    
+    if (gotFrame && !global::state.pausePlayback)
+        glutPostRedisplay();
+}
+
+// On window reshape
+void reshape(int w, int h)
+{
+    global::state.widthWin = w;
+    global::state.heightWin = h;
+    
+    // Calculate video position and size within the window
+    float sx = w, sy = h;
+    if (sx/sy >= (float)global::state.width[0]/global::state.height[0])
+        sx = ((float)(h*global::state.width[0]))/global::state.height[0];
+    else
+        sy = ((float)(w*global::state.height[0]))/global::state.width[0];
+    
+    float x0 = (w-sx)/2.0f;
+    float y0 = (h-sy)/2.0f;
+    
+    global::state.sx = round(100.0f*sx/w);
+    global::state.sy = round(100.0f*sy/h);
+    global::state.x0 = round(100.0f*x0/w);
+    global::state.y0 = round(100.0f*y0/h);
+    
+    // Calculate GUI size and position
+    global::state.sxGUI = 0.9f*w;
+    global::state.syGUI = 0.3f*h;
+    global::state.sxGUI = std::min(global::state.syGUI*(float)global::state.widthGUI/global::state.heightGUI, 
+                                   (float)std::min(global::state.widthGUI, global::state.sxGUI));
+    global::state.syGUI = global::state.sxGUI*(float)global::state.heightGUI/global::state.widthGUI;
+    global::state.x0GUI = (w-global::state.sxGUI)/2;
+    global::state.y0GUI = h - 1.5f*global::state.syGUI;
+    
+    // Calculate positions of GUI buttons/sliders
+    global::state.Sx0 = global::state.x0GUI;
+    global::state.Sx1 = global::state.x0GUI + 0.066f*global::state.sxGUI;
+    global::state.Sx2 = global::state.x0GUI + 0.91f*global::state.sxGUI;
+    global::state.Sx3 = global::state.x0GUI + global::state.sxGUI;
+    global::state.Sy0 = global::state.y0GUI;
+    global::state.Sy1 = global::state.y0GUI + global::state.syGUI;
+    
+    global::state.sxGUI = 100*global::state.sxGUI/w;
+    global::state.syGUI = 100*global::state.syGUI/h;
+    global::state.x0GUI = 100*global::state.x0GUI/w;
+    global::state.y0GUI = 100*global::state.y0GUI/h;
+    
+    glViewport(0,0,w,h);
+}
+
+// On double click time out. To determine when a double click occures
+void doubleClickRegistration(int)
+{
+    global::state.firstClick = false;
+}
+
+// On mouse click
+void mouse(int button, int state, int xi, int yi)
+{
+    unsigned int x = xi, y = yi;
+    
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+    {
+        // Click on the sliders
+        if (x > global::state.Sx1 && x < global::state.Sx2)
+        {
+            if (y > global::state.Sy0 && y < 0.7*global::state.Sy0 + 0.3*global::state.Sy1)
+                global::state.mousePressL1 = true;
+            else if (y > 0.7*global::state.Sy0 + 0.3*global::state.Sy1 && y < global::state.Sy1)
+                global::state.mousePressL2 = true;
+            
+            positionSlider(x);
+        }
+        
+        // Click on play/pause button
+        if (x > global::state.Sx0 && x < global::state.Sx1 
+            && y > global::state.Sy0 && y < global::state.Sy1)
+        {
+            global::state.pausePlayback = !global::state.pausePlayback;
+            glutPostRedisplay();
+        }
+        
+        // Click on maximize button, or by double clicking in the window
+        else if (global::state.firstClick ||
+                 (x > global::state.Sx2 && x < global::state.Sx3 
+                  && y > global::state.Sy0 && y < global::state.Sy1) )
+        {
+            if (global::state.fullScreen)
+                glutReshapeWindow(global::state.widthWin0, global::state.heightWin0);
+            else
+            {
+                global::state.widthWin0 = global::state.widthWin;
+                global::state.heightWin0 = global::state.heightWin;
+                glutFullScreen();
+            }
+            
+            global::state.fullScreen = !global::state.fullScreen;
+        }
+        
+        else
+        {
+            global::state.firstClick = true;
+            glutTimerFunc(300, doubleClickRegistration, 0);
+        }
+    }
+    else
+    {
+        global::state.mousePressL1 = false;
+        global::state.mousePressL2 = false;
+    }
+}
+
+// On mouse click and movement
+void mouseMotion(int x, int)
+{
+    resetGuiTime();
+    
+    positionSlider(x);
+}
+
+// On mouse movement
+void mousePassiveMotion(int xi, int yi)
+{
+    unsigned int x = xi, y = yi;
+    resetGuiTime();
+    
+    // Locate if and where the mouse is above the GUI
+    if (x > global::state.Sx0 && x < global::state.Sx1 && 
+        y > global::state.Sy0 && y < global::state.Sy1) // Pause/play button
+        global::state.guiButton = 1;
+    else if (x > global::state.Sx1 && x < global::state.Sx2 &&
+             y > global::state.Sy0 && 
+             y < 0.7*global::state.Sy0 + 0.3*global::state.Sy1) // Time slider
+        global::state.guiButton = 2;
+    else if (x > global::state.Sx1 && x < global::state.Sx2 && 
+             y > 0.7*global::state.Sy0 + 0.3*global::state.Sy1 && 
+             y < global::state.Sy1) // Exposure slider
+        global::state.guiButton = 3;
+    else if (x > global::state.Sx2 && x < global::state.Sx3 && 
+             y > global::state.Sy0 && y < global::state.Sy1) // Maximize button
+        global::state.guiButton = 4;
+    else
+        global::state.guiButton = 0;
+    
+    if (global::state.pausePlayback)
+        glutPostRedisplay();
+}
+
+// On keybord press
+void keyboard(unsigned char key, int x, int)
+{
+    switch(key)
+    {
+    // Exit
+    case 27:
+    case 17:
+    case 23:
+        glutDestroyWindow(global::state.windNr);
+        exit(0);
+        break;
+    // Pause/play
+    case ' ':
+        global::state.pausePlayback = !global::state.pausePlayback;
+        resetGuiTime();
+        glutPostRedisplay();
+        break;
+    // Increase exposure
+    case '+':
+    case '=':
+        global::state.exposure *= 1.5f;
+        glUniform1f(glGetUniformLocation(global::state.dequantProg, "exposure"),
+                    global::state.exposure);
+        resetGuiTime();
+        glutPostRedisplay();
+        break;
+    // Decrease exposure
+    case '-':
+        global::state.exposure /= 1.5f;
+        glUniform1f(glGetUniformLocation(global::state.dequantProg, "exposure"),
+                    global::state.exposure);
+        resetGuiTime();
+        glutPostRedisplay();
+        break;
+    // Apply tone curve
+    case 't':
+        global::state.doTmo = !global::state.doTmo;
+        glUniform1i(glGetUniformLocation(global::state.dequantProg, "doTmo"),
+                    global::state.doTmo);
+        glutPostRedisplay();
+        break;
+    // Simulate an LDR video
+    case 'l':
+        global::state.ldrSim = !global::state.ldrSim;
+        glUniform1i(glGetUniformLocation(global::state.dequantProg, "ldrSim"),
+                    global::state.ldrSim);
+        glutPostRedisplay();
+        break;
+    // Seeking by mouse position
+    case 's':
+        seekToTime(float(x)/global::state.widthWin);
+        break;
+    // Show simple timings
+    case 'z':
+        global::state.showTimings = !global::state.showTimings;
+        break;
+    }
+}
+
+// =============================================================================
 

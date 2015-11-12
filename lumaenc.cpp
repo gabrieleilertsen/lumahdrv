@@ -47,7 +47,7 @@
 
 #include "config.h"
 
-
+// Input and output specific information
 struct IOData
 {
     IOData() : startFrame(1), endFrame(9999), stepFrame(1), verbose(0)
@@ -58,6 +58,7 @@ struct IOData
     bool verbose;
 };
 
+// Determine file extension
 bool hasExtension( const char *file_name, const char *extension )
 {
     if( file_name == NULL )
@@ -74,6 +75,7 @@ bool hasExtension( const char *file_name, const char *extension )
     return false;
 }
 
+// Parse a frame range, given as <startFrame>:<step>:<endFrame>
 bool getFrameRange(std::string &frames, unsigned int &start, unsigned int &step, unsigned int &end)
 {
     int nrDelim = -1;
@@ -102,6 +104,7 @@ bool getFrameRange(std::string &frames, unsigned int &start, unsigned int &step,
     return 1;
 }
 
+// Parse parameter options from command line
 bool setParams(int argc, char* argv[], LumaEncoderParams *params, IOData *io)
 {
     std::string frames;
@@ -109,6 +112,7 @@ bool setParams(int argc, char* argv[], LumaEncoderParams *params, IOData *io)
     std::string cs, csValues[] = {"LUV", "RGB", "YCBCR", "XYZ"}; // valid color space input values
     unsigned int bdValues[] = {8, 10, 12}; // valid bit depths
 
+    // Application usage info
     std::string info = std::string("lumaenc -- Compress a sequence of high dyncamic range (HDR) frames in to a Matroska (.mkv) HDR video\n\n") +
                        std::string("Usage: lumaenc --input <hdr_frames> \\\n") +
                        std::string("               --frames <start_frame:step:end_frame> \\\n") +
@@ -257,3 +261,4 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+

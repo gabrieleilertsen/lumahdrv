@@ -45,37 +45,9 @@
 #include <sstream>
 #include <math.h>
 
-void ArgParser::displayInfo()
-{
-    fprintf(stderr, "%s\nAvailable options:\n", m_preInfo.c_str());
-    for (size_t i=0; i<m_args.size(); i++)
-    {
-        std::string type;
-        switch (m_args[i].argType)
-        {
-        case ARG_UINT:
-            type = " <int>";
-            break;
-        case ARG_FLOAT:
-            type = " <float>";
-            break;
-        case ARG_STRING:
-            type = " <string>";
-            break;
-        case ARG_FLAG:
-        case ARG_NONE:
-            type = "";
-            break;
-        }
-        fprintf(stderr, "  %-15s  %-25s\t:  %s\n",
-                (m_args[i].shortName + type + ",").c_str(),
-                (m_args[i].name + type).c_str(),
-                m_args[i].description.c_str());
-    }
-    fprintf(stderr, "%s\n", m_postInfo.c_str());
-}
 
-// flag ------------------------------------------------------------------------
+
+//=== Flag =====================================================================
 void ArgParser::add(bool *var,
                     std::string name, std::string shortName, std::string description)
 {
@@ -84,8 +56,11 @@ void ArgParser::add(bool *var,
     arg.argType = ARG_FLAG;
     m_args.push_back(arg);
 }
+//==============================================================================
+
+
              
-// unsigned int ----------------------------------------------------------------
+//=== Unsigned int =============================================================
 void ArgParser::add(unsigned int *var,
                     std::string name, std::string shortName, std::string description,
                     bool optional)
@@ -118,8 +93,11 @@ void ArgParser::add(unsigned int *var,
     m_args[ind].validUINT = std::vector<unsigned int>(validArgs, validArgs+nrValid);
     m_args[ind].checkValid = true;
 }
+//==============================================================================
 
-// float -----------------------------------------------------------------------
+
+
+//=== Float ====================================================================
 void ArgParser::add(float *var,
                     std::string name, std::string shortName, std::string description,
                     bool optional)
@@ -152,8 +130,11 @@ void ArgParser::add(float *var,
     m_args[ind].validFLOAT = std::vector<float>(validArgs, validArgs+nrValid);
     m_args[ind].checkValid = true;
 }
+//==============================================================================
 
-// string ----------------------------------------------------------------------
+
+
+//=== String ===================================================================
 void ArgParser::add(std::string *var,
                     std::string name, std::string shortName, std::string description,
                     bool optional)
@@ -174,7 +155,44 @@ void ArgParser::add(std::string *var,
     m_args[ind].validSTRING = std::vector<std::string>(validArgs, validArgs+nrValid);
     m_args[ind].checkValid = true;
 }
+//==============================================================================
 
+
+
+// Display specified general and parameter specific information
+void ArgParser::displayInfo()
+{
+    fprintf(stderr, "%s\nAvailable options:\n", m_preInfo.c_str());
+    for (size_t i=0; i<m_args.size(); i++)
+    {
+        std::string type;
+        switch (m_args[i].argType)
+        {
+        case ARG_UINT:
+            type = " <int>";
+            break;
+        case ARG_FLOAT:
+            type = " <float>";
+            break;
+        case ARG_STRING:
+            type = " <string>";
+            break;
+        case ARG_FLAG:
+        case ARG_NONE:
+            type = "";
+            break;
+        }
+        fprintf(stderr, "  %-15s  %-25s\t:  %s\n",
+                (m_args[i].shortName + type + ",").c_str(),
+                (m_args[i].name + type).c_str(),
+                m_args[i].description.c_str());
+    }
+    fprintf(stderr, "%s\n", m_postInfo.c_str());
+}
+
+
+
+// Read arguments
 bool ArgParser::read(int argc, char* argv[])
 {
     for (int i=1; i<argc; i++)
