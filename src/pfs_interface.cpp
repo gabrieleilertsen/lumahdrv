@@ -100,6 +100,8 @@ bool PfsInterface::readFrame(const char *inputFile, LumaFrame &frame)
     memcpy( frame.getChannel(1), G->getRawData(), frame.height*frame.width*sizeof(float) );
     memcpy( frame.getChannel(2), B->getRawData(), frame.height*frame.width*sizeof(float) );  
 
+    pfsio->freeFrame( pfs_frame );
+    
     return true;
   
   }
