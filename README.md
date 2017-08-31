@@ -150,6 +150,12 @@ Luma HDRv. The included libraries are:
 Please see the respective source directories in `./lib` for license 
 information.
 
+## Known issues
+
+The library does not work with libvpx3 provided in Ubuntu
+16.04. Uninstall libvpx-dev and compile with the static version of
+libvpx (provided in lib, automatically used no libvpx cannot be found
+in the system).
 
 ## License
 
