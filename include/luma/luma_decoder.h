@@ -59,12 +59,13 @@
 
 struct LumaDecoderParamsBase
 {
-    LumaDecoderParamsBase() : ptf(LumaQuantizer::PTF_PSI), colorSpace(LumaQuantizer::CS_LUV), preScaling(1.0f)
+    LumaDecoderParamsBase() : ptf(LumaQuantizer::PTF_PSI), colorSpace(LumaQuantizer::CS_LUV),
+        preScaling(1.0f), minLum(0.005f), maxLum(1e4f)
     {}
     
     LumaQuantizer::ptf_t ptf;
     LumaQuantizer::colorSpace_t colorSpace;
-    float preScaling;
+    float preScaling, minLum, maxLum;
 };
 
 

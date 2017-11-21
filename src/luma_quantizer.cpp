@@ -170,7 +170,8 @@ void LumaQuantizer::setMappingPsi()
 
 // Specify the quanizer to use, which includes ptf, color space and their respective bit depths
 void LumaQuantizer::setQuantizer(ptf_t ptf, unsigned int bitdepth,
-                                 colorSpace_t cs, unsigned int bitdepthC)
+                                 colorSpace_t cs, unsigned int bitdepthC,
+                                 float maxLum)
 {
     if (m_mapping != NULL)
         delete[] m_mapping;
@@ -180,6 +181,7 @@ void LumaQuantizer::setQuantizer(ptf_t ptf, unsigned int bitdepth,
     m_colorSpace = cs;
     m_bitdepthColor = bitdepthC;
     m_maxValColor = (int)pow(2.0f,(float)bitdepthC)-1;
+    m_Lmax = maxLum;
     
     m_mapping = new float[m_maxVal+1];
     

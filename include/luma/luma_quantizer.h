@@ -98,7 +98,8 @@ public:
     static std::string name(colorSpace_t cs);
     
     void setQuantizer(ptf_t ptf, unsigned int bitdepth,
-                      colorSpace_t cs, unsigned int bitdepthC);
+                      colorSpace_t cs, unsigned int bitdepthC,
+                      float maxLum);
     
     float quantize(const float val, const unsigned int ch) const;
     float dequantize(const float val, const unsigned int ch) const;
@@ -106,6 +107,8 @@ public:
     bool transformColorSpace(LumaFrame *frame, bool toCs, float sc);
     const float *getMapping(){ return m_mapping; }
     unsigned int getSize() { return m_maxVal; }
+    float getMaxLum() { return m_Lmax; };
+    float getMinLum() { return m_Lmin; };
 private:
     void setMappingPQ();
     void setMappingLog();

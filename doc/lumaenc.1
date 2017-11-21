@@ -129,6 +129,14 @@ The perceptual transfer function used for encoding:
 Default is PQ.
 
 .TP
+.B \-m  \fIMAXLUMINANCE\fR, \fB\-\-max-luminance \fIMAXLUMINANCE
+Maximum luminance for the perceptual transfer function. Values above this will
+be clipped. This option only applies to the PQ and LOG transfer functions, as
+the others use lookup tables.
+
+Default value is 10000.
+
+.TP
 .B \-cs  \fICS\fR, \fB\-\-color-space \fICS
 The encoder assumes the input to be in RGB. The RGB values are then transformed to
 one of the following color spaces for encoding:

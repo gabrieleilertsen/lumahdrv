@@ -154,7 +154,7 @@ information.
 
 The library does not work with libvpx3 provided in Ubuntu
 16.04. Uninstall libvpx-dev and compile with the static version of
-libvpx (provided in lib, automatically used no libvpx cannot be found
+libvpx (provided in lib, and automatically used if libvpx cannot be found
 in the system).
 
 ## License

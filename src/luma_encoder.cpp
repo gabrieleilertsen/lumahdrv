@@ -72,7 +72,7 @@ bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const
         m_params.profile +=2;
     
     // Initialize quantizer
-    m_quant.setQuantizer(m_params.ptf, m_params.ptfBitDepth, m_params.colorSpace, m_params.colorBitDepth);
+    m_quant.setQuantizer(m_params.ptf, m_params.ptfBitDepth, m_params.colorSpace, m_params.colorBitDepth, m_params.maxLum);
     
     // Add attachments with meta data to Matroska file
     unsigned int *buffer1 = new unsigned int;
@@ -98,6 +98,10 @@ bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const
     float *buffer6 = new float;
     *buffer6 = m_params.preScaling;
     m_writer.addAttachment(435, (const binary*)buffer6, sizeof(float), "Scaling");
+
+    float *buffer7 = new float;
+    *buffer7 = m_params.maxLum;
+    m_writer.addAttachment(436, (const binary*)buffer7, sizeof(float), "Max luminance");
     
     m_writer.writeAttachments();
     
@@ -146,12 +150,16 @@ bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const
     
     fprintf(stderr, "Encoding options:\n");
     fprintf(stderr, "--------------------------------------------------------\n");
-    fprintf(stderr, "Transfer function (PTF): %s\n", m_quant.name(m_params.ptf).c_str());
-    fprintf(stderr, "Color space:             %s\n", m_quant.name(m_params.colorSpace).c_str());
-    fprintf(stderr, "PTF bit depth:           %d\n", m_params.ptfBitDepth);
-    fprintf(stderr, "Color bit depth:         %d\n", m_params.colorBitDepth);
-    fprintf(stderr, "Encoding profile:        %d (4%d%d)\n", m_params.profile, (m_params.profile%2==0) ? 2 : 4, (m_params.profile%2==0) ? 2 : 4);
-    fprintf(stderr, "Encoding bit depth:      ");
+    fprintf(stderr, "Transfer function (PTF):   %s\n", m_quant.name(m_params.ptf).c_str());
+    fprintf(stderr, "Color space:               %s\n", m_quant.name(m_params.colorSpace).c_str());
+    fprintf(stderr, "PTF bit depth:             %d\n", m_params.ptfBitDepth);
+    fprintf(stderr, "Color bit depth:           %d\n", m_params.colorBitDepth);
+    if (m_params.ptf == LumaQuantizer::PTF_PQ)
+        fprintf(stderr, "Encoding max luminance:    %.2f\n", m_quant.getMaxLum());
+    else if (m_params.ptf == LumaQuantizer::PTF_PQ)
+        fprintf(stderr, "Encoding luminance range:  %.2f-%02f\n", m_quant.getMinLum(), m_quant.getMaxLum());
+    fprintf(stderr, "Encoding profile:          %d (4%d%d)\n", m_params.profile, (m_params.profile%2==0) ? 2 : 4, (m_params.profile%2==0) ? 2 : 4);
+    fprintf(stderr, "Encoding bit depth:        ");
     if (m_params.bitDepth == 8 || m_params.profile < 2)
     {
         cfg.g_bit_depth = VPX_BITS_8;

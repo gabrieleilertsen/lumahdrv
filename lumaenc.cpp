@@ -133,6 +133,7 @@ bool setParams(int argc, char* argv[], LumaEncoderParams *params, IOData *io)
     argHolder.add(&params->colorBitDepth,    "--color-bitdepth",    "-cb",  "Bit depth of the color channels", (unsigned int)(0), (unsigned int)(16));
     argHolder.add(&ptf,                      "--transfer-function", "-ptf", "The perceptual transfer function used for encoding", ptfValues, 5);
     argHolder.add(&cs,                       "--color-space",       "-cs",  "Color space for encoding", csValues, 4);
+    argHolder.add(&params->maxLum,           "--max-luminance",     "-m",   "Maximum luminance in encoding (for PQ and LOG transfer function)", 100.0f, 1e5f);
     argHolder.add(&params->bitrate,          "--bitrate",           "-b",   "HDR video stream target bandwidth, in Kb/s", (unsigned int)(0), (unsigned int)(9999));
     argHolder.add(&params->keyframeInterval, "--keyframe-interval", "-k",   "Interval between keyframes. 0 for automatic keyframes", (unsigned int)(0), (unsigned int)(9999));
     argHolder.add(&params->bitDepth,         "--encoding-bitdepth", "-eb",  "Encoding at 8, 10 or 12 bits", bdValues, 3);

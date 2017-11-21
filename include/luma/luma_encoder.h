@@ -59,12 +59,12 @@
 struct LumaEncoderParamsBase
 {
     LumaEncoderParamsBase() : 
-        quantizerScale(2), ptfBitDepth(11), colorBitDepth(8), preScaling(1.0f),
+        quantizerScale(2), ptfBitDepth(11), colorBitDepth(8), preScaling(1.0f), minLum(0.005f), maxLum(1e4f),
         fps(25.0f), ptf(LumaQuantizer::PTF_PQ), colorSpace(LumaQuantizer::CS_LUV)
     {}
     
     unsigned int quantizerScale, ptfBitDepth, colorBitDepth;
-    float preScaling, fps;
+    float preScaling, fps, minLum, maxLum;
     LumaQuantizer::ptf_t ptf;
     LumaQuantizer::colorSpace_t colorSpace;
 };
