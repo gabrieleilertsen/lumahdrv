@@ -17,9 +17,9 @@
 **
 ** You should have received a copy of the GNU Lesser General Public
 ** License along with this library; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 **
-** See http://www.matroska.org/license/lgpl/ for LGPL licensing information.
+** See http://www.gnu.org/licenses/lgpl-2.1.html for LGPL licensing information.
 **
 ** Contact license@matroska.org if any conditions of this licensing are
 ** not clear to you.
@@ -33,7 +33,11 @@
 */
 
 #include <cassert>
+#include <cstdlib>
 #include <cstring>
+#include <iostream>
+#include <stdexcept>
+#include <sstream>
 
 #include "ebml/EbmlElement.h"
 #include "ebml/EbmlMaster.h"
@@ -150,6 +154,11 @@ uint64 ReadCodedSizeValue(const binary * InBuffer, uint32 & BufferSize, uint64 &
       // ID found
       PossibleSizeLength = SizeIdx + 1;
       SizeBitMask >>= SizeIdx;
+
+      // Guard against invalid memory accesses with incomplete IDs.
+      if (PossibleSizeLength > BufferSize)
+        break;
+
       for (SizeIdx = 0; SizeIdx < PossibleSizeLength; SizeIdx++) {
         PossibleSize[SizeIdx] = InBuffer[SizeIdx];
       }
@@ -216,8 +225,10 @@ const EbmlSemantic & EbmlSemanticContext::GetSemantic(size_t i) const
   assert(i<Size);
   if (i<Size)
     return MyTable[i];
-  else
-    return *(EbmlSemantic*)NULL;
+
+  std::stringstream ss;
+  ss << "EbmlSemanticContext::GetSemantic: programming error: index i outside of table size (" << i << " >= " << Size << ")";
+  throw std::logic_error(ss.str());
 }
 
 
@@ -262,12 +273,12 @@ EbmlElement * EbmlElement::FindNextID(IOCallback & DataStream, const EbmlCallbac
   int PossibleID_Length = 0;
   binary PossibleSize[8]; // we don't support size stored in more than 64 bits
   uint32 PossibleSizeLength = 0;
-  uint64 SizeUnknown;
-  uint64 SizeFound;
+  uint64 SizeUnknown = 0;
+  uint64 SizeFound = 0;
   bool bElementFound = false;
 
   binary BitMask;
-  uint64 aElementPosition, aSizePosition;
+  uint64 aElementPosition = 0, aSizePosition = 0;
   while (!bElementFound) {
     // read ID
     aElementPosition = DataStream.getFilePointer();
@@ -340,7 +351,6 @@ EbmlElement * EbmlElement::FindNextID(IOCallback & DataStream, const EbmlCallbac
       return NULL;
     }
   } else Result->SetSizeInfinite(false);
-  
   Result->ElementPosition = aElementPosition;
   Result->SizePosition = aSizePosition;
 
@@ -394,12 +404,18 @@ EbmlElement * EbmlElement::FindNextElement(IOCallback & DataStream, const EbmlSe
         memmove(&PossibleIdNSize[0],&PossibleIdNSize[1], --ReadIndex);
       }
 
+      if (MaxDataSize <= ReadSize)
+        break;
       if (DataStream.read(&PossibleIdNSize[ReadIndex++], 1) == 0) {
         return NULL; // no more data ?
       }
       ReadSize++;
 
-    } while (!bFound && MaxDataSize > ReadSize);
+    } while (!bFound);
+
+    if (!bFound)
+      // we reached the maximum we could read without a proper ID
+      return NULL;
 
     SizeIdx = ReadIndex;
     ReadIndex -= PossibleID_Length;
@@ -418,7 +434,14 @@ EbmlElement * EbmlElement::FindNextElement(IOCallback & DataStream, const EbmlSe
         bFound = false;
         break;
       }
-      ReadSize += DataStream.read(&PossibleIdNSize[SizeIdx++], 1);
+      if (MaxDataSize <= ReadSize) {
+        bFound = false;
+        break;
+      }
+      if( DataStream.read( &PossibleIdNSize[SizeIdx++], 1 ) == 0 ) {
+        return NULL; // no more data ?
+      }
+      ReadSize++;
       PossibleSizeLength++;
     }
 
@@ -438,15 +461,13 @@ EbmlElement * EbmlElement::FindNextElement(IOCallback & DataStream, const EbmlSe
           //  1 : same level
           //  + : further parent
           if (Result->ValidateSize() && (SizeFound == SizeUnknown || UpperLevel > 0 || MaxDataSize == 0 || MaxDataSize >= (PossibleID_Length + PossibleSizeLength + SizeFound))) {
-            if (SizeFound == SizeUnknown) {
-              Result->SetSizeInfinite();
+            if (SizeFound != SizeUnknown || Result->SetSizeInfinite()) {
+              Result->SizePosition = DataStream.getFilePointer() - SizeIdx + EBML_ID_LENGTH(PossibleID);
+              Result->ElementPosition = Result->SizePosition - EBML_ID_LENGTH(PossibleID);
+              // place the file at the beggining of the data
+              DataStream.setFilePointer(Result->SizePosition + _SizeLength);
+              return Result;
             }
-
-            Result->SizePosition = DataStream.getFilePointer() - SizeIdx + EBML_ID_LENGTH(PossibleID);
-            Result->ElementPosition = Result->SizePosition - EBML_ID_LENGTH(PossibleID);
-            // place the file at the beggining of the data
-            DataStream.setFilePointer(Result->SizePosition + _SizeLength);
-            return Result;
           }
         }
         delete Result;

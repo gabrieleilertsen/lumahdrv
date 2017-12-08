@@ -165,6 +165,12 @@ void MkvInterface::openWrite(const char *outputFile, const unsigned int w, const
         KaxVideoPixelWidth & MyTrack2PWidth = GetChild<KaxVideoPixelWidth>(MyTrack2Video);
         *(static_cast<EbmlUInteger *>(&MyTrack2PWidth)) = w;
 
+        KaxVideoDisplayHeight & MyTrack2DHeight = GetChild<KaxVideoDisplayHeight>(MyTrack2Video);
+        *(static_cast<EbmlUInteger *>(&MyTrack2DHeight)) = h;
+
+        KaxVideoDisplayWidth & MyTrack2DWidth = GetChild<KaxVideoDisplayWidth>(MyTrack2Video);
+        *(static_cast<EbmlUInteger *>(&MyTrack2DWidth)) = h;
+
         MyTracks.Render(*m_file, m_writeDefaultValues);
 
         m_metaSeek->IndexThis(MyTracks, m_fileSegment);

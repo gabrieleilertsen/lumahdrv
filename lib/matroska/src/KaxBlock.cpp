@@ -89,7 +89,7 @@ KaxInternalBlock::KaxInternalBlock(const KaxInternalBlock & ElementToClone)
   std::vector<DataBuffer *>::iterator myItr = myBuffers.begin();
   while (Itr != ElementToClone.myBuffers.end()) {
     *myItr = (*Itr)->Clone();
-    Itr++; myItr++;
+    ++Itr; ++myItr;
   }
 }
 
@@ -287,7 +287,7 @@ filepos_t KaxInternalBlock::RenderData(IOCallback & output, bool /* bForceRender
         mLacing = LACING_EBML; // supposedly the best of all
       SetSize_(4 + 1); // 1 for the lacing head (number of laced elements)
     }
-    if (TrackNumber > 0x80)
+    if (TrackNumber >= 0x80)
       SetSize_(GetSize() + 1);
 
     // write Block Head
@@ -338,7 +338,7 @@ filepos_t KaxInternalBlock::RenderData(IOCallback & output, bool /* bForceRender
         assert(0);
     }
 
-    output.writeFully(BlockHead, 4 + ((TrackNumber > 0x80) ? 1 : 0));
+    output.writeFully(BlockHead, 4 + ((TrackNumber >= 0x80) ? 1 : 0));
 
     binary tmpValue;
     switch (mLacing) {
@@ -529,6 +529,8 @@ filepos_t KaxInternalBlock::ReadData(IOCallback & input, ScopeMode ReadFully)
           case LACING_EBML:
             SizeRead = LastBufferSize;
             FrameSize = ReadCodedSizeValue(BufferStart + Mem.GetPosition(), SizeRead, SizeUnknown);
+            if (!FrameSize || (static_cast<uint32>(FrameSize + SizeRead) > LastBufferSize))
+              throw SafeReadIOCallback::EndOfStreamX(SizeRead);
             SizeList[0] = FrameSize;
             Mem.Skip(SizeRead);
             LastBufferSize -= FrameSize + SizeRead;
@@ -537,6 +539,8 @@ filepos_t KaxInternalBlock::ReadData(IOCallback & input, ScopeMode ReadFully)
               // get the size of the frame
               SizeRead = LastBufferSize;
               FrameSize += ReadCodedSizeSignedValue(BufferStart + Mem.GetPosition(), SizeRead, SizeUnknown);
+              if (!FrameSize || (static_cast<uint32>(FrameSize + SizeRead) > LastBufferSize))
+                throw SafeReadIOCallback::EndOfStreamX(SizeRead);
               SizeList[Index] = FrameSize;
               Mem.Skip(SizeRead);
               LastBufferSize -= FrameSize + SizeRead;

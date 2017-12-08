@@ -1,9 +1,10 @@
 /**********************************************************************
 **  DO NOT EDIT, GENERATED WITH DATA2LIB
+**  https://github.com/Matroska-Org/foundation-source/tree/master/spectool
 **
 **  libmatroska : parse Matroska files, see http://www.matroska.org/
 **
-**  Copyright (c) 2002-2010, Matroska (non-profit organisation)
+**  Copyright (c) 2002-2017, Matroska (non-profit organisation)
 **  All rights reserved.
 **
 ** This file is part of libmatroska.
@@ -254,6 +255,9 @@ DEFINE_SEMANTIC_ITEM(false, true, KaxTrackOffset) // not supported
 DEFINE_SEMANTIC_ITEM(true, true, KaxMaxBlockAdditionID)
 DEFINE_SEMANTIC_ITEM(false, true, KaxTrackName)
 DEFINE_SEMANTIC_ITEM(false, true, KaxTrackLanguage)
+#if MATROSKA_VERSION >= 2
+DEFINE_SEMANTIC_ITEM(false, true, KaxLanguageIETF)
+#endif // MATROSKA_VERSION
 DEFINE_SEMANTIC_ITEM(true, true, KaxCodecID)
 DEFINE_SEMANTIC_ITEM(false, true, KaxCodecPrivate)
 DEFINE_SEMANTIC_ITEM(false, true, KaxCodecName)
@@ -306,6 +310,9 @@ DEFINE_MKX_SINTEGER_DEF(KaxTrackOffset, 0x537F, 2, KaxTrackEntry, "TrackOffset",
 DEFINE_MKX_UINTEGER_DEF(KaxMaxBlockAdditionID, 0x55EE, 2, KaxTrackEntry, "MaxBlockAdditionID", 0);
 DEFINE_MKX_UNISTRING(KaxTrackName, 0x536E, 2, KaxTrackEntry, "TrackName");
 DEFINE_MKX_STRING_DEF(KaxTrackLanguage, 0x22B59C, 3, KaxTrackEntry, "TrackLanguage", "eng");
+#if MATROSKA_VERSION >= 2
+DEFINE_MKX_STRING(KaxLanguageIETF, 0x22B59D, 3, KaxTrackEntry, "LanguageIETF");
+#endif
 DEFINE_MKX_STRING(KaxCodecID, 0x86, 1, KaxTrackEntry, "CodecID");
 DEFINE_MKX_BINARY (KaxCodecPrivate, 0x63A2, 2, KaxTrackEntry, "CodecPrivate");
 DEFINE_MKX_UNISTRING(KaxCodecName, 0x258688, 3, KaxTrackEntry, "CodecName");
@@ -336,6 +343,7 @@ DEFINE_MKX_BINARY (KaxTrackTranslateTrackID, 0x66A5, 2, KaxTrackTranslate, "Trac
 DEFINE_START_SEMANTIC(KaxTrackVideo)
 #if MATROSKA_VERSION >= 2
 DEFINE_SEMANTIC_ITEM(true, true, KaxVideoFlagInterlaced)
+DEFINE_SEMANTIC_ITEM(true, true, KaxVideoFieldOrder)
 DEFINE_SEMANTIC_ITEM(false, true, KaxVideoStereoMode)
 DEFINE_SEMANTIC_ITEM(false, true, KaxVideoAlphaMode)
 DEFINE_SEMANTIC_ITEM(false, true, KaxOldStereoMode) // not supported
@@ -354,12 +362,15 @@ DEFINE_SEMANTIC_ITEM(false, true, KaxVideoColourSpace)
 #if MATROSKA_VERSION >= 2
 DEFINE_SEMANTIC_ITEM(false, true, KaxVideoGamma) // not supported
 DEFINE_SEMANTIC_ITEM(false, true, KaxVideoFrameRate) // not supported
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoColour)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoProjection)
 #endif // MATROSKA_VERSION
 DEFINE_END_SEMANTIC(KaxTrackVideo)
 
 DEFINE_MKX_MASTER(KaxTrackVideo, 0xE0, 1, KaxTrackEntry, "TrackVideo");
 #if MATROSKA_VERSION >= 2
 DEFINE_MKX_UINTEGER_DEF(KaxVideoFlagInterlaced, 0x9A, 1, KaxTrackVideo, "VideoFlagInterlaced", 0);
+DEFINE_MKX_UINTEGER_DEF(KaxVideoFieldOrder, 0x9D, 1, KaxTrackVideo, "VideoFieldOrder", 2);
 DEFINE_MKX_UINTEGER_DEF(KaxVideoStereoMode, 0x53B8, 2, KaxTrackVideo, "VideoStereoMode", 0);
 DEFINE_MKX_UINTEGER_DEF(KaxVideoAlphaMode, 0x53C0, 2, KaxTrackVideo, "VideoAlphaMode", 0);
 DEFINE_MKX_UINTEGER(KaxOldStereoMode, 0x53B9, 2, KaxTrackVideo, "OldStereoMode");
@@ -378,6 +389,78 @@ DEFINE_MKX_BINARY (KaxVideoColourSpace, 0x2EB524, 3, KaxTrackVideo, "VideoColour
 #if MATROSKA_VERSION >= 2
 DEFINE_MKX_FLOAT(KaxVideoGamma, 0x2FB523, 3, KaxTrackVideo, "VideoGamma");
 DEFINE_MKX_FLOAT(KaxVideoFrameRate, 0x2383E3, 3, KaxTrackVideo, "VideoFrameRate");
+
+DEFINE_START_SEMANTIC(KaxVideoColour)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoColourMatrix)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoBitsPerChannel)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoChromaSubsampHorz)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoChromaSubsampVert)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoCbSubsampHorz)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoCbSubsampVert)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoChromaSitHorz)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoChromaSitVert)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoColourRange)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoColourTransferCharacter)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoColourPrimaries)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoColourMaxCLL)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoColourMaxFALL)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoColourMasterMeta)
+DEFINE_END_SEMANTIC(KaxVideoColour)
+
+DEFINE_MKX_MASTER(KaxVideoColour, 0x55B0, 2, KaxTrackVideo, "VideoColour");
+DEFINE_MKX_UINTEGER_DEF(KaxVideoColourMatrix, 0x55B1, 2, KaxVideoColour, "VideoColourMatrix", 2);
+DEFINE_MKX_UINTEGER_DEF(KaxVideoBitsPerChannel, 0x55B2, 2, KaxVideoColour, "VideoBitsPerChannel", 0);
+DEFINE_MKX_UINTEGER(KaxVideoChromaSubsampHorz, 0x55B3, 2, KaxVideoColour, "VideoChromaSubsampHorz");
+DEFINE_MKX_UINTEGER(KaxVideoChromaSubsampVert, 0x55B4, 2, KaxVideoColour, "VideoChromaSubsampVert");
+DEFINE_MKX_UINTEGER(KaxVideoCbSubsampHorz, 0x55B5, 2, KaxVideoColour, "VideoCbSubsampHorz");
+DEFINE_MKX_UINTEGER(KaxVideoCbSubsampVert, 0x55B6, 2, KaxVideoColour, "VideoCbSubsampVert");
+DEFINE_MKX_UINTEGER_DEF(KaxVideoChromaSitHorz, 0x55B7, 2, KaxVideoColour, "VideoChromaSitHorz", 0);
+DEFINE_MKX_UINTEGER_DEF(KaxVideoChromaSitVert, 0x55B8, 2, KaxVideoColour, "VideoChromaSitVert", 0);
+DEFINE_MKX_UINTEGER_DEF(KaxVideoColourRange, 0x55B9, 2, KaxVideoColour, "VideoColourRange", 0);
+DEFINE_MKX_UINTEGER_DEF(KaxVideoColourTransferCharacter, 0x55BA, 2, KaxVideoColour, "VideoColourTransferCharacter", 2);
+DEFINE_MKX_UINTEGER_DEF(KaxVideoColourPrimaries, 0x55BB, 2, KaxVideoColour, "VideoColourPrimaries", 2);
+DEFINE_MKX_UINTEGER(KaxVideoColourMaxCLL, 0x55BC, 2, KaxVideoColour, "VideoColourMaxCLL");
+DEFINE_MKX_UINTEGER(KaxVideoColourMaxFALL, 0x55BD, 2, KaxVideoColour, "VideoColourMaxFALL");
+
+DEFINE_START_SEMANTIC(KaxVideoColourMasterMeta)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoRChromaX)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoRChromaY)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoGChromaX)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoGChromaY)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoBChromaX)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoBChromaY)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoWhitePointChromaX)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoWhitePointChromaY)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoLuminanceMax)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoLuminanceMin)
+DEFINE_END_SEMANTIC(KaxVideoColourMasterMeta)
+
+DEFINE_MKX_MASTER(KaxVideoColourMasterMeta, 0x55D0, 2, KaxVideoColour, "VideoColourMasterMeta");
+DEFINE_MKX_FLOAT(KaxVideoRChromaX, 0x55D1, 2, KaxVideoColourMasterMeta, "VideoRChromaX");
+DEFINE_MKX_FLOAT(KaxVideoRChromaY, 0x55D2, 2, KaxVideoColourMasterMeta, "VideoRChromaY");
+DEFINE_MKX_FLOAT(KaxVideoGChromaX, 0x55D3, 2, KaxVideoColourMasterMeta, "VideoGChromaX");
+DEFINE_MKX_FLOAT(KaxVideoGChromaY, 0x55D4, 2, KaxVideoColourMasterMeta, "VideoGChromaY");
+DEFINE_MKX_FLOAT(KaxVideoBChromaX, 0x55D5, 2, KaxVideoColourMasterMeta, "VideoBChromaX");
+DEFINE_MKX_FLOAT(KaxVideoBChromaY, 0x55D6, 2, KaxVideoColourMasterMeta, "VideoBChromaY");
+DEFINE_MKX_FLOAT(KaxVideoWhitePointChromaX, 0x55D7, 2, KaxVideoColourMasterMeta, "VideoWhitePointChromaX");
+DEFINE_MKX_FLOAT(KaxVideoWhitePointChromaY, 0x55D8, 2, KaxVideoColourMasterMeta, "VideoWhitePointChromaY");
+DEFINE_MKX_FLOAT(KaxVideoLuminanceMax, 0x55D9, 2, KaxVideoColourMasterMeta, "VideoLuminanceMax");
+DEFINE_MKX_FLOAT(KaxVideoLuminanceMin, 0x55DA, 2, KaxVideoColourMasterMeta, "VideoLuminanceMin");
+
+DEFINE_START_SEMANTIC(KaxVideoProjection)
+DEFINE_SEMANTIC_ITEM(true, true, KaxVideoProjectionType)
+DEFINE_SEMANTIC_ITEM(false, true, KaxVideoProjectionPrivate)
+DEFINE_SEMANTIC_ITEM(true, true, KaxVideoProjectionPoseYaw)
+DEFINE_SEMANTIC_ITEM(true, true, KaxVideoProjectionPosePitch)
+DEFINE_SEMANTIC_ITEM(true, true, KaxVideoProjectionPoseRoll)
+DEFINE_END_SEMANTIC(KaxVideoProjection)
+
+DEFINE_MKX_MASTER(KaxVideoProjection, 0x7670, 2, KaxTrackVideo, "VideoProjection");
+DEFINE_MKX_UINTEGER_DEF(KaxVideoProjectionType, 0x7671, 2, KaxVideoProjection, "VideoProjectionType", 0);
+DEFINE_MKX_BINARY (KaxVideoProjectionPrivate, 0x7672, 2, KaxVideoProjection, "VideoProjectionPrivate");
+DEFINE_MKX_FLOAT_DEF(KaxVideoProjectionPoseYaw, 0x7673, 2, KaxVideoProjection, "VideoProjectionPoseYaw", 0);
+DEFINE_MKX_FLOAT_DEF(KaxVideoProjectionPosePitch, 0x7674, 2, KaxVideoProjection, "VideoProjectionPosePitch", 0);
+DEFINE_MKX_FLOAT_DEF(KaxVideoProjectionPoseRoll, 0x7675, 2, KaxVideoProjection, "VideoProjectionPoseRoll", 0);
 #endif
 
 DEFINE_START_SEMANTIC(KaxTrackAudio)
@@ -625,12 +708,18 @@ DEFINE_MKX_UINTEGER(KaxChapterTrackNumber, 0x89, 1, KaxChapterTrack, "ChapterTra
 DEFINE_START_SEMANTIC(KaxChapterDisplay)
 DEFINE_SEMANTIC_ITEM(true, true, KaxChapterString)
 DEFINE_SEMANTIC_ITEM(true, false, KaxChapterLanguage)
+#if MATROSKA_VERSION >= 2
+DEFINE_SEMANTIC_ITEM(false, true, KaxChapLanguageIETF)
+#endif // MATROSKA_VERSION
 DEFINE_SEMANTIC_ITEM(false, false, KaxChapterCountry)
 DEFINE_END_SEMANTIC(KaxChapterDisplay)
 
 DEFINE_MKX_MASTER(KaxChapterDisplay, 0x80, 1, KaxChapterAtom, "ChapterDisplay");
 DEFINE_MKX_UNISTRING(KaxChapterString, 0x85, 1, KaxChapterDisplay, "ChapterString");
 DEFINE_MKX_STRING_DEF(KaxChapterLanguage, 0x437C, 2, KaxChapterDisplay, "ChapterLanguage", "eng");
+#if MATROSKA_VERSION >= 2
+DEFINE_MKX_STRING(KaxChapLanguageIETF, 0x437D, 2, KaxChapterDisplay, "ChapLanguageIETF");
+#endif
 DEFINE_MKX_STRING(KaxChapterCountry, 0x437E, 2, KaxChapterDisplay, "ChapterCountry");
 
 DEFINE_START_SEMANTIC(KaxChapterProcess)
@@ -686,6 +775,9 @@ DEFINE_START_SEMANTIC(KaxTagSimple)
 DEFINE_SEMANTIC_ITEM(false, false, KaxTagSimple) // recursive
 DEFINE_SEMANTIC_ITEM(true, true, KaxTagName)
 DEFINE_SEMANTIC_ITEM(true, true, KaxTagLangue)
+#if MATROSKA_VERSION >= 2
+DEFINE_SEMANTIC_ITEM(false, true, KaxTagLanguageIETF)
+#endif // MATROSKA_VERSION
 DEFINE_SEMANTIC_ITEM(true, true, KaxTagDefault)
 DEFINE_SEMANTIC_ITEM(false, true, KaxTagString)
 DEFINE_SEMANTIC_ITEM(false, true, KaxTagBinary)
@@ -694,6 +786,9 @@ DEFINE_END_SEMANTIC(KaxTagSimple)
 DEFINE_MKX_MASTER(KaxTagSimple, 0x67C8, 2, KaxTag, "TagSimple");
 DEFINE_MKX_UNISTRING(KaxTagName, 0x45A3, 2, KaxTagSimple, "TagName");
 DEFINE_MKX_STRING_DEF(KaxTagLangue, 0x447A, 2, KaxTagSimple, "TagLanguage", "und");
+#if MATROSKA_VERSION >= 2
+DEFINE_MKX_STRING(KaxTagLanguageIETF, 0x447B, 2, KaxTagSimple, "TagLanguageIETF");
+#endif
 DEFINE_MKX_UINTEGER_DEF(KaxTagDefault, 0x4484, 2, KaxTagSimple, "TagDefault", 1);
 DEFINE_MKX_UNISTRING(KaxTagString, 0x4487, 2, KaxTagSimple, "TagString");
 DEFINE_MKX_BINARY (KaxTagBinary, 0x4485, 2, KaxTagSimple, "TagBinary");

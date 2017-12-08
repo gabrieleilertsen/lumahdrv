@@ -1,9 +1,10 @@
 /**********************************************************************
 **  DO NOT EDIT, GENERATED WITH DATA2LIB
+**  https://github.com/Matroska-Org/foundation-source/tree/master/spectool
 **
 **  libmatroska : parse Matroska files, see http://www.matroska.org/
 **
-**  Copyright (c) 2002-2010, Matroska (non-profit organisation)
+**  Copyright (c) 2002-2017, Matroska (non-profit organisation)
 **  All rights reserved.
 **
 ** This file is part of libmatroska.
@@ -208,6 +209,7 @@ DECLARE_MKX_BINARY (KaxEncryptedBlock)
 public:
   filepos_t RenderData(IOCallback & output, bool bForceRender, bool bSaveDefault);
 };
+
 #endif
 
 DECLARE_MKX_MASTER(KaxTracks)
@@ -271,6 +273,11 @@ DECLARE_MKX_UNISTRING(KaxTrackName)
 
 DECLARE_MKX_STRING(KaxTrackLanguage)
 };
+
+#if MATROSKA_VERSION >= 2
+DECLARE_MKX_STRING(KaxLanguageIETF)
+};
+#endif
 
 DECLARE_MKX_STRING(KaxCodecID)
 };
@@ -336,6 +343,9 @@ DECLARE_MKX_MASTER(KaxTrackVideo)
 DECLARE_MKX_UINTEGER(KaxVideoFlagInterlaced)
 };
 
+DECLARE_MKX_UINTEGER(KaxVideoFieldOrder)
+};
+
 DECLARE_MKX_UINTEGER(KaxVideoStereoMode)
 };
 
@@ -393,6 +403,103 @@ DECLARE_MKX_FLOAT(KaxVideoFrameRate)
 public:
   filepos_t RenderData(IOCallback & output, bool bForceRender, bool bSaveDefault);
 };
+
+DECLARE_MKX_MASTER(KaxVideoColour)
+};
+
+
+DECLARE_MKX_UINTEGER(KaxVideoColourMatrix)
+};
+
+DECLARE_MKX_UINTEGER(KaxVideoBitsPerChannel)
+};
+
+DECLARE_MKX_UINTEGER(KaxVideoChromaSubsampHorz)
+};
+
+DECLARE_MKX_UINTEGER(KaxVideoChromaSubsampVert)
+};
+
+DECLARE_MKX_UINTEGER(KaxVideoCbSubsampHorz)
+};
+
+DECLARE_MKX_UINTEGER(KaxVideoCbSubsampVert)
+};
+
+DECLARE_MKX_UINTEGER(KaxVideoChromaSitHorz)
+};
+
+DECLARE_MKX_UINTEGER(KaxVideoChromaSitVert)
+};
+
+DECLARE_MKX_UINTEGER(KaxVideoColourRange)
+};
+
+DECLARE_MKX_UINTEGER(KaxVideoColourTransferCharacter)
+};
+
+DECLARE_MKX_UINTEGER(KaxVideoColourPrimaries)
+};
+
+DECLARE_MKX_UINTEGER(KaxVideoColourMaxCLL)
+};
+
+DECLARE_MKX_UINTEGER(KaxVideoColourMaxFALL)
+};
+
+DECLARE_MKX_MASTER(KaxVideoColourMasterMeta)
+};
+
+
+DECLARE_MKX_FLOAT(KaxVideoRChromaX)
+};
+
+DECLARE_MKX_FLOAT(KaxVideoRChromaY)
+};
+
+DECLARE_MKX_FLOAT(KaxVideoGChromaX)
+};
+
+DECLARE_MKX_FLOAT(KaxVideoGChromaY)
+};
+
+DECLARE_MKX_FLOAT(KaxVideoBChromaX)
+};
+
+DECLARE_MKX_FLOAT(KaxVideoBChromaY)
+};
+
+DECLARE_MKX_FLOAT(KaxVideoWhitePointChromaX)
+};
+
+DECLARE_MKX_FLOAT(KaxVideoWhitePointChromaY)
+};
+
+DECLARE_MKX_FLOAT(KaxVideoLuminanceMax)
+};
+
+DECLARE_MKX_FLOAT(KaxVideoLuminanceMin)
+};
+
+DECLARE_MKX_MASTER(KaxVideoProjection)
+};
+
+
+DECLARE_MKX_UINTEGER(KaxVideoProjectionType)
+};
+
+DECLARE_MKX_BINARY (KaxVideoProjectionPrivate)
+};
+
+DECLARE_MKX_FLOAT(KaxVideoProjectionPoseYaw)
+};
+
+DECLARE_MKX_FLOAT(KaxVideoProjectionPosePitch)
+};
+
+DECLARE_MKX_FLOAT(KaxVideoProjectionPoseRoll)
+};
+
 #endif
 
 DECLARE_MKX_MASTER(KaxTrackAudio)
@@ -554,6 +661,7 @@ DECLARE_MKX_UINTEGER(KaxCueRefCodecState)
 public:
   filepos_t RenderData(IOCallback & output, bool bForceRender, bool bSaveDefault);
 };
+
 #endif
 
 DECLARE_MKX_MASTER(KaxAttachments)
@@ -590,6 +698,7 @@ DECLARE_MKX_UINTEGER(KaxFileUsedStartTime)
 
 DECLARE_MKX_UINTEGER(KaxFileUsedEndTime)
 };
+
 #endif
 
 DECLARE_MKX_MASTER(KaxChapters)
@@ -664,6 +773,11 @@ DECLARE_MKX_UNISTRING(KaxChapterString)
 DECLARE_MKX_STRING(KaxChapterLanguage)
 };
 
+#if MATROSKA_VERSION >= 2
+DECLARE_MKX_STRING(KaxChapLanguageIETF)
+};
+#endif
+
 DECLARE_MKX_STRING(KaxChapterCountry)
 };
 
@@ -726,6 +840,11 @@ DECLARE_MKX_UNISTRING(KaxTagName)
 
 DECLARE_MKX_STRING(KaxTagLangue)
 };
+
+#if MATROSKA_VERSION >= 2
+DECLARE_MKX_STRING(KaxTagLanguageIETF)
+};
+#endif
 
 DECLARE_MKX_UINTEGER(KaxTagDefault)
 };

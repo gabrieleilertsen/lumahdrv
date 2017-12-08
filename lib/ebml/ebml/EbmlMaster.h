@@ -19,9 +19,9 @@
 **
 ** You should have received a copy of the GNU Lesser General Public
 ** License along with this library; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 **
-** See http://www.matroska.org/license/lgpl/ for LGPL licensing information.
+** See http://www.gnu.org/licenses/lgpl-2.1.html for LGPL licensing information.
 **
 ** Contact license@matroska.org if any conditions of this licensing are
 ** not clear to you.
@@ -161,7 +161,6 @@ class EBML_DLL_API EbmlMaster : public EbmlElement {
 
     /*!
       \brief facility for Master elements to write only the head and force the size later
-      \warning
     */
     filepos_t WriteHead(IOCallback & output, int SizeLength, bool bWithDefault = false);
 
@@ -217,6 +216,12 @@ template <typename Type>
 Type & GetNextChild(EbmlMaster & Master, const Type & PastElt)
 {
   return *(static_cast<Type *>(Master.FindNextElt(PastElt, true)));
+}
+
+template <typename Type>
+Type * FindNextChild(EbmlMaster & Master, const Type & PastElt)
+{
+  return static_cast<Type *>(Master.FindNextElt(PastElt, false));
 }
 
 template <typename Type>

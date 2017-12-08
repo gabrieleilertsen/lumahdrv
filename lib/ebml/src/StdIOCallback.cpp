@@ -17,9 +17,9 @@
 **
 ** You should have received a copy of the GNU Lesser General Public
 ** License along with this library; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 **
-** See http://www.matroska.org/license/lgpl/ for LGPL licensing information.
+** See http://www.gnu.org/licenses/lgpl-2.1.html for LGPL licensing information.
 **
 ** Contact license@matroska.org if any conditions of this licensing are
 ** not clear to you.
@@ -131,8 +131,9 @@ void StdIOCallback::setFilePointer(int64 Offset,seek_mode Mode)
     ostringstream Msg;
     Msg<<"Failed to seek file "<<File<<" to offset "<<(unsigned long)Offset<<" in mode "<<Mode;
     throw CRTError(Msg.str());
-#endif // GCC2
+#else // GCC2
     mCurrentPosition = ftell(File);
+#endif
   } else {
     switch ( Mode ) {
       case SEEK_CUR:

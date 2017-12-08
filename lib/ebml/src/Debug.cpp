@@ -19,9 +19,9 @@
 **
 ** You should have received a copy of the GNU Lesser General Public
 ** License along with this library; if not, write to the Free Software
-** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 **
-** See http://www.matroska.org/license/lgpl/ for LGPL licensing information.
+** See http://www.gnu.org/licenses/lgpl-2.1.html for LGPL licensing information.
 **
 ** Contact license@matroska.org if any conditions of this licensing are
 ** not clear to you.
@@ -36,7 +36,7 @@
 */
 #include <stdio.h>
 
-#ifdef WIN32
+#if defined(WIN32) || defined(_WIN32)
 #include <windows.h> // For OutputDebugString
 #else
 #include <time.h>
@@ -79,7 +79,7 @@ inline int ADbg::_OutPut(const char * format,va_list params) const
   char tst[1000];
   char myformat[256];
 
-#ifdef WIN32
+#if defined(WIN32) || defined(_WIN32)
   if (my_time_included) {
     SYSTEMTIME time;
     GetSystemTime(&time);
@@ -193,7 +193,7 @@ bool ADbg::setDebugFile(const char * NewFilename) {
 
   result = false;
 
-#ifdef WIN32
+#if defined(WIN32) || defined(_WIN32)
   hFile = CreateFileA(NewFilename, GENERIC_WRITE, FILE_SHARE_WRITE|FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 
   if (hFile != INVALID_HANDLE_VALUE) {
@@ -222,7 +222,7 @@ bool ADbg::unsetDebugFile() {
   if (result)
     return true;
 
-#ifdef WIN32
+#if defined(WIN32) || defined(_WIN32)
   result = (CloseHandle(hFile) != 0);
 #else
   result = (fclose(hFile) == 0);
