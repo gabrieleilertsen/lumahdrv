@@ -60,6 +60,7 @@
 #include "matroska/KaxSeekHead.h"
 #include "matroska/KaxCues.h"
 #include "matroska/KaxInfoData.h"
+#include "matroska/KaxVersion.h"
 
 #include "ebml/EbmlStream.h"
 #include "ebml/EbmlContexts.h"
@@ -78,7 +79,7 @@ public:
     MkvInterface();
     ~MkvInterface();
     
-    void openWrite(const char *outputFile, const unsigned int w, const unsigned int h);
+    void openWrite(const char *outputFile, const unsigned int w, const unsigned int h, const float maxL, const float minL);
     void openRead(const char *inputFile);
     void close();
     void addAttachment(unsigned int uid, const binary* buffer, unsigned int buffer_size, const char* description = "--");

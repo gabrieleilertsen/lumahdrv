@@ -105,7 +105,8 @@ bool LumaDecoder::initialize(const char *inputFile, bool verbose)
             m_params.preScaling = *((float*)buffer);
             break;
         case 436:
-            m_params.maxLum = *((float*)buffer);
+            m_params.maxLum = ((float*)buffer)[0];
+            m_params.minLum = ((float*)buffer)[1];
             break;
         }
     }
@@ -117,24 +118,22 @@ bool LumaDecoder::initialize(const char *inputFile, bool verbose)
     }
     
     // Initialize quantizer
-    m_quant.setQuantizer(m_params.ptf, m_params.ptfBitDepth, m_params.colorSpace, m_params.colorBitDepth, m_params.maxLum);
+    m_quant.setQuantizer(m_params.ptf, m_params.ptfBitDepth, m_params.colorSpace, m_params.colorBitDepth, m_params.maxLum, m_params.minLum);
     memcpy((void*)m_quant.getMapping(), (void*)mapping, mapping_size);
     
     // Initialize VPX codec
     const vpx_codec_iface_t *(*const vpx_decoder)() = &vpx_codec_vp9_dx;
 
     fprintf(stderr, "\nDecoding options:\n");
-    fprintf(stderr, "---------------------------------------------------------\n");
-    fprintf(stderr, "Transfer function (PTF):  %s\n", ptfFound ? m_quant.name(m_params.ptf).c_str() : "--");
-    if (m_params.ptf == LumaQuantizer::PTF_PQ)
-        fprintf(stderr, "Encoding max luminance:   %.2f\n", m_quant.getMaxLum());
-    else if (m_params.ptf == LumaQuantizer::PTF_PQ)
-        fprintf(stderr, "Encoding luminance range: %.2f-%.2f\n", m_quant.getMinLum(), m_quant.getMaxLum());
-    fprintf(stderr, "Color space:              %s\n", csFound ? m_quant.name(m_params.colorSpace).c_str() : "--");
-    fprintf(stderr, "PTF bit depth:            %d\n", ptfBDFound ? m_params.ptfBitDepth : -1);
-    fprintf(stderr, "Color bit depth:          %d\n", colorBDFound ? m_params.colorBitDepth : -1);
-    fprintf(stderr, "Codec:                    %s\n", vpx_codec_iface_name(vpx_decoder()));
-    fprintf(stderr, "---------------------------------------------------------\n\n");
+    fprintf(stderr, "-------------------------------------------------------------------\n");
+    fprintf(stderr, "Transfer function (PTF):   %s\n", ptfFound ? m_quant.name(m_params.ptf).c_str() : "--");
+    if (m_params.ptf == LumaQuantizer::PTF_PQ || m_params.ptf == LumaQuantizer::PTF_LOG || m_params.ptf == LumaQuantizer::PTF_LINEAR)
+        fprintf(stderr, "Encoding luminance range:  %.4f-%.2f\n", m_quant.getMinLum(), m_quant.getMaxLum());
+    fprintf(stderr, "Color space:               %s\n", csFound ? m_quant.name(m_params.colorSpace).c_str() : "--");
+    fprintf(stderr, "PTF bit depth:             %d\n", ptfBDFound ? m_params.ptfBitDepth : -1);
+    fprintf(stderr, "Color bit depth:           %d\n", colorBDFound ? m_params.colorBitDepth : -1);
+    fprintf(stderr, "Codec:                     %s\n", vpx_codec_iface_name(vpx_decoder()));
+    fprintf(stderr, "-------------------------------------------------------------------\n\n");
 
     vpx_codec_dec_cfg_t cfg;
     cfg.threads = 4;

@@ -99,7 +99,7 @@ public:
     
     void setQuantizer(ptf_t ptf, unsigned int bitdepth,
                       colorSpace_t cs, unsigned int bitdepthC,
-                      float maxLum);
+                      float maxLum, float minLum);
     
     float quantize(const float val, const unsigned int ch) const;
     float dequantize(const float val, const unsigned int ch) const;

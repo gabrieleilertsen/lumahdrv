@@ -121,7 +121,7 @@ Default value is 1.
 The perceptual transfer function used for encoding:
 
   PSI     :  Perceptual - Ferwerda's t.v.i.
-  PQ      :  Dolby perceptual quantizer
+  PQ      :  Dolby perceptual quantizer (SMPTE ST 2084)
   LOG     :  Logarithmic transformation
   HDRVDP  :  Transformation function from HDR-VDP
   LINEAR  :  Linear scaling
@@ -129,12 +129,20 @@ The perceptual transfer function used for encoding:
 Default is PQ.
 
 .TP
-.B \-m  \fIMAXLUMINANCE\fR, \fB\-\-max-luminance \fIMAXLUMINANCE
-Maximum luminance for the perceptual transfer function. Values above this will
-be clipped. This option only applies to the PQ and LOG transfer functions, as
-the others use lookup tables.
+.B \-ma  \fIMAXLUMINANCE\fR, \fB\-\-max-luminance \fIMAXLUMINANCE
+Maximum luminance (cd/m2) for the perceptual transfer function. Values above 
+this will be clipped. This option only applies to the PQ and LOG transfer 
+functions, as the other available PTFs use lookup tables.
 
 Default value is 10000.
+
+.TP
+.B \-mi  \fIMINLUMINANCE\fR, \fB\-\-min-luminance \fIMINLUMINANCE
+Minimum luminance (cd/m2) for the perceptual transfer function. Values below 
+this will be clipped. This option only applies to the PQ and LOG transfer
+functions, as the other available PTFs use lookup tables.
+
+Default value is 0.005.
 
 .TP
 .B \-cs  \fICS\fR, \fB\-\-color-space \fICS
@@ -176,14 +184,21 @@ Encode EXR frames hdr_frame_00001.exr -- hdr_frame_00100.exr into HDR video hdr_
 \fBlumaenc\fR [...] \fB--encoding-bitdepth\fR 8 \fB--profile\fR 0 \fB--ptf-bitdepth\fR 8 \fB--color-space\fR YCBCR \fB--transfer-function\fR LOG
 
 Encode at 8 bits, in YCbCr, with logarithmic transfer function. This example is 
-possible to view in video players that support VP9 (e.g. later versions of VLC 
-and ffplay). However, quantization artifacts will be clearly visible when encoding 
-HDR at only 8 bits.
+possible to view in video players that support VP9. However, quantization artifacts 
+will be clearly visible when encoding HDR at only 8 bits.
 
 .TP
 \fBpfsin\fR frame%04d.hdr \fB--frames\fR 1:2:100 | \fBlumaenc\fR \fB-o\fR video.mkv
 
-Read the frames stored in Radiance (.hdr) format with the index 0001, 0003, 0005, ..., 0099, encode them and save the resulting video in the file video.mkv. Note that pfstools (http://pfstools.sourceforge.net/) are required for piping frames in any HDR format. 
+Read the frames stored in Radiance (.hdr) format with the index 0001, 0003, 0005, ..., 0099, encode them and save the resulting video in the file video.mkv. Note that pfstools (http://pfstools.sourceforge.net/) is required for piping frames in any HDR format.
+
+.TP
+\fBlumaenc\fR [...] \fB--encoding-bitdepth\fR 10 \fB--color-bitdepth\fR 10 \fB--ptf-bitdepth\fR 10 \fB--profile\fR 2 \fB--transfer-function\fR PQ \fB--color-space\fR YCBCR \fB--max-luminance\fR 1000 \fB--min-luminance\fR 0.01
+
+Encodes an HDR video that is possible to upload to e.g. Youtube and Vimeo. The
+settings are equivalent to the HDR10 format, and thus properly recognized by 
+applications that support HDR10 material encoded using VP9 and stored with the
+Matroska container.
 
 .SH "SEE ALSO"
 .BR lumadec (1)

@@ -81,9 +81,12 @@ struct LumaEncoderParamsBase
 class LumaEncoderBase
 {
 public:
-    virtual bool initialize(const char *outputFile, const unsigned int w, const unsigned int h, bool verbose = 0)
+    virtual bool initialize(const char *outputFile, 
+                            const unsigned int w, const unsigned int h,
+                            const float ma, const float mi,
+                            bool verbose = 0)
     {
-        m_writer.openWrite(outputFile, w, h);
+        m_writer.openWrite(outputFile, w, h, ma, mi);
         return true;
     }
     

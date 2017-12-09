@@ -1,3 +1,15 @@
 
 LumaHDRv 0.0.1 <09.11.2015>
     * LumaHDRv first beta release
+
+LumaHDRv 0.0.2 <08.12.2017>
+    * Updated libraries
+    	- libebml v1.3.5
+    	- libmatroska v1.4.8
+    	- libvpx v1.6.1
+
+LumaHDRv 0.0.3 <09.12.2017>
+    * Fixed meta data and codec settings, 
+      so that encoded HDR videos are compatible
+      with e.g. Youtube and Vimeo, if encoded 
+      using HDR10 specification.

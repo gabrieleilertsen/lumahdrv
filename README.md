@@ -31,6 +31,42 @@ $ man lumadec
 $ man lumaplay
 ```
 
+### Comparison to HDR video formats
+Luma HDRv provides capabilities to encode HDR video with a number of 
+different settings (transfer function, color space, bit depth etc.). The 
+default settings encodes luminance between 0.005 and 10000 cd/m^2 at 11
+bits by means of the perceptual quantizer (PQ, SMPTE ST 2084) function, 
+and colors at 8 bits/channel in the Lu'v' color space.
+
+It is also possible to encode in a format that is compatible with existing
+HDR video standards. The following encodes with PQ at 10 bits, and in the 
+YCbCr color space according to recommendation ITU-R BT.2020, with luminance 
+range limited to 0.01-1000 cd/m^2:
+
+```
+lumaenc \
+	--input hdr_frames_%06d.exr \
+	--frames 1:500 \
+	--output hdr_video.mkv \
+	--encoding-bitdepth 10 \
+	--color-bitdepth 10 \
+	--ptf-bitdepth 10 \
+	--profile 2 \
+	--transfer-function PQ \
+	--color-space YCBCR \
+	--pre-scaling 20 \
+	--max-luminance 1000 \
+	--min-luminance 0.01
+```
+Please see manual pages for explanation of the different parameters. Note that
+the `--pre-scaling` option can be used to approximately calibrate the
+input to physical units. The result of this encoding is equivalent to the HDR10
+standard, which is the most widely supported HDR video format. This makes the 
+video compatible with applications that support HDR10, and that can decode VP9 
+codec stored in a Matroska container. It is for example possible to upload the 
+result to [Youtube](https://www.youtube.com/) and [Vimeo](https://vimeo.com),
+where it is properly recognized as HDR video.
+
 ## Included libraries and applications
 Depending on what is available on the build system (see compilation 
 and installation section), the Luma HDRv package is built with 

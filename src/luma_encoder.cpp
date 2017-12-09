@@ -63,7 +63,7 @@ LumaEncoder::~LumaEncoder()
 bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const unsigned int h, bool verbose)
 {
     // Initialize base. Creates a Matroska file for writing
-    LumaEncoderBase::initialize(outputFile, w, h);
+    LumaEncoderBase::initialize(outputFile, w, h, m_params.maxLum, m_params.minLum);
     
     // Adjust profile for the specified bit depth (0-1 for 8 bits, and 2-3 for higher bit depths)
     if (m_params.profile > 1 && m_params.bitDepth == 8)
@@ -72,7 +72,7 @@ bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const
         m_params.profile +=2;
     
     // Initialize quantizer
-    m_quant.setQuantizer(m_params.ptf, m_params.ptfBitDepth, m_params.colorSpace, m_params.colorBitDepth, m_params.maxLum);
+    m_quant.setQuantizer(m_params.ptf, m_params.ptfBitDepth, m_params.colorSpace, m_params.colorBitDepth, m_params.maxLum, m_params.minLum);
     
     // Add attachments with meta data to Matroska file
     unsigned int *buffer1 = new unsigned int;
@@ -99,9 +99,9 @@ bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const
     *buffer6 = m_params.preScaling;
     m_writer.addAttachment(435, (const binary*)buffer6, sizeof(float), "Scaling");
 
-    float *buffer7 = new float;
-    *buffer7 = m_params.maxLum;
-    m_writer.addAttachment(436, (const binary*)buffer7, sizeof(float), "Max luminance");
+    float *buffer7 = new float[2];
+    buffer7[0] = m_params.maxLum; buffer7[1] = m_params.minLum;
+    m_writer.addAttachment(436, (const binary*)buffer7, 2*sizeof(float), "Luminance range");
     
     m_writer.writeAttachments();
     
@@ -149,15 +149,13 @@ bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const
     cfg.g_profile = m_params.profile;
     
     fprintf(stderr, "Encoding options:\n");
-    fprintf(stderr, "--------------------------------------------------------\n");
+    fprintf(stderr, "-------------------------------------------------------------------\n");
     fprintf(stderr, "Transfer function (PTF):   %s\n", m_quant.name(m_params.ptf).c_str());
     fprintf(stderr, "Color space:               %s\n", m_quant.name(m_params.colorSpace).c_str());
     fprintf(stderr, "PTF bit depth:             %d\n", m_params.ptfBitDepth);
     fprintf(stderr, "Color bit depth:           %d\n", m_params.colorBitDepth);
-    if (m_params.ptf == LumaQuantizer::PTF_PQ)
-        fprintf(stderr, "Encoding max luminance:    %.2f\n", m_quant.getMaxLum());
-    else if (m_params.ptf == LumaQuantizer::PTF_PQ)
-        fprintf(stderr, "Encoding luminance range:  %.2f-%02f\n", m_quant.getMinLum(), m_quant.getMaxLum());
+    if (m_params.ptf == LumaQuantizer::PTF_PQ || m_params.ptf == LumaQuantizer::PTF_LOG || m_params.ptf == LumaQuantizer::PTF_LINEAR)
+        fprintf(stderr, "Encoding luminance range:  %.4f-%.2f\n", m_quant.getMinLum(), m_quant.getMaxLum());
     fprintf(stderr, "Encoding profile:          %d (4%d%d)\n", m_params.profile, (m_params.profile%2==0) ? 2 : 4, (m_params.profile%2==0) ? 2 : 4);
     fprintf(stderr, "Encoding bit depth:        ");
     if (m_params.bitDepth == 8 || m_params.profile < 2)
@@ -175,15 +173,19 @@ bool LumaEncoder::initialize(const char *outputFile, const unsigned int w, const
         cfg.g_bit_depth = VPX_BITS_12;
         fprintf(stderr, "12\n");
     }
-    fprintf(stderr, "Codec:                   %s\n", vpx_codec_iface_name(vpx_encoder()));
-    fprintf(stderr, "Output:                  %s\n", outputFile);
-    fprintf(stderr, "--------------------------------------------------------\n\n");
+    fprintf(stderr, "Codec:                     %s\n", vpx_codec_iface_name(vpx_encoder()));
+    fprintf(stderr, "Output:                    %s\n", outputFile);
+    fprintf(stderr, "-------------------------------------------------------------------\n\n");
 
     int flags = m_params.profile < 2 ? 0 : VPX_CODEC_USE_HIGHBITDEPTH;
     if (vpx_codec_enc_init(&m_codec, vpx_encoder(), &cfg, flags))
 	    throw LumaException("Failed to initialize vpxEncoder\n");
+
+    // Let the codec know if CbCr color space is used, for third party decoding purposes
+    if (m_params.colorSpace == LumaQuantizer::CS_YCBCR && vpx_codec_control(&m_codec, VP9E_SET_COLOR_SPACE, 5))
+        fprintf(stderr, "Warning! Failed to set color space of encoder. Color primaries may not be recognized during decoding.\n\n");
 	
-	if (m_params.lossLess && vpx_codec_control_(&m_codec, VP9E_SET_LOSSLESS, 1))
+	if (m_params.lossLess && vpx_codec_control(&m_codec, VP9E_SET_LOSSLESS, 1))
 	    throw LumaException("Failed to use lossless mode\n");
 	
     m_initialized = true;

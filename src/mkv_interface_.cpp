@@ -82,9 +82,7 @@ MkvInterface::~MkvInterface()
     m_attachmentBuffer.clear();
 }
 
-void MkvInterface::openWrite(const char *outputFile, 
-                             const unsigned int w, const unsigned int h, 
-                             const float maxL, const float minL)
+void MkvInterface::openWrite(const char *outputFile, const unsigned int w, const unsigned int h)
 {
     m_writeMode = 1;
     
@@ -101,8 +99,8 @@ void MkvInterface::openWrite(const char *outputFile,
         *static_cast<EbmlUInteger *>(&GetChild<EMaxIdLength>(FileHead)) = 4;
         *static_cast<EbmlUInteger *>(&GetChild<EMaxSizeLength>(FileHead)) = 8;
         *static_cast<EbmlString *>(&GetChild<EDocType>(FileHead)) = "matroska";
-        *static_cast<EbmlUInteger *>(&GetChild<EDocTypeVersion>(FileHead)) = MATROSKA_VERSION;
-        *static_cast<EbmlUInteger *>(&GetChild<EDocTypeReadVersion>(FileHead)) = 1;
+        *static_cast<EbmlUInteger *>(&GetChild<EDocTypeVersion>(FileHead)) = 4;
+        *static_cast<EbmlUInteger *>(&GetChild<EDocTypeReadVersion>(FileHead)) = 2;
         FileHead.Render(*m_file, m_writeDefaultValues);
 
         // size is unknown and will always be, we can render it right away
@@ -123,8 +121,8 @@ void MkvInterface::openWrite(const char *outputFile,
         *static_cast<EbmlFloat *>(&GetChild<KaxDuration>(MyInfos)) = 1000.0;
         UTFstring str;
         str.SetUTF8(outputFile);
-        *static_cast<EbmlUnicodeString *>(&GetChild<KaxSegmentFilename>(MyInfos)) = str.c_str();
-        
+		*static_cast<EbmlUnicodeString *>(&GetChild<KaxSegmentFilename>(MyInfos)) = str.c_str();
+		
         str.SetUTF8(std::string("libebml v") + EbmlCodeVersion + std::string(" + libmatroska v") + KaxCodeVersion);
         *static_cast<EbmlUnicodeString *>(&GetChild<KaxMuxingApp>(MyInfos))  = str.c_str();
         *static_cast<EbmlUnicodeString *>(&GetChild<KaxWritingApp>(MyInfos)) = L"luma mkv_interface";
@@ -145,27 +143,23 @@ void MkvInterface::openWrite(const char *outputFile,
         //(static_cast<EbmlBinary *>(&GetChild<KaxCodecPrivate>(*m_track)))->CopyBuffer(b,2);
         m_track->EnableLacing(true);
 
-        // Video specific params ---------------------------------------------------
+        // video specific params
+        
         KaxTrackVideo & MyTrack2Video = GetChild<KaxTrackVideo>(*m_track);
         *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoPixelHeight>(MyTrack2Video))) = h;
         *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoPixelWidth>(MyTrack2Video))) = w;
         *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoDisplayHeight>(MyTrack2Video))) = h;
         *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoDisplayWidth>(MyTrack2Video))) = w;
 
-        // Video color meta data ---------------------------------------------------
-        // This information is needed by third party decoders, e.g. Youtube and Vimeo,
-        // in order to properly recognize HDR data. The information assumes that the
-        // video is encoded using PQ transformation and CbCr BT.2020 color space.
-        //
+        /*
         KaxVideoColour & MyTrack2Color = GetChild<KaxVideoColour>(MyTrack2Video);
-        *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoColourMatrix>(MyTrack2Color))) = 9; // BT2020
-        *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoColourRange>(MyTrack2Color))) = 1; // Broadcast Range
-        *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoColourTransferCharacter>(MyTrack2Color))) = 16; // PQ (SMPTE ST 2084)
-        *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoColourPrimaries>(MyTrack2Color))) = 9; // ITU-R BT.2020
-        *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoColourMaxCLL>(MyTrack2Color))) = maxL; // Maximum Content Light Level
-        *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoColourMaxFALL>(MyTrack2Color))) = 300; // Maximum Frame-Average Light Level
+        *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoColourMatrix>(MyTrack2Color))) = 9;
+        *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoColourRange>(MyTrack2Color))) = 1;
+        *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoColourTransferCharacter>(MyTrack2Color))) = 16;
+        *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoColourPrimaries>(MyTrack2Color))) = 9;
+        *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoColourMaxCLL>(MyTrack2Color))) = 1000;
+        *(static_cast<EbmlUInteger *>(&GetChild<KaxVideoColourMaxFALL>(MyTrack2Color))) = 300;
 
-        // CIE 1931 chromaticity coordinates, and luminance range
         KaxVideoColourMasterMeta & MyColorMeta = GetChild<KaxVideoColourMasterMeta>(MyTrack2Color);
         *(static_cast<EbmlFloat *>(&GetChild<KaxVideoRChromaX>(MyColorMeta))) = 0.68;
         *(static_cast<EbmlFloat *>(&GetChild<KaxVideoRChromaY>(MyColorMeta))) = 0.32;
@@ -175,9 +169,9 @@ void MkvInterface::openWrite(const char *outputFile,
         *(static_cast<EbmlFloat *>(&GetChild<KaxVideoBChromaY>(MyColorMeta))) = 0.06;
         *(static_cast<EbmlFloat *>(&GetChild<KaxVideoWhitePointChromaX>(MyColorMeta))) = 0.3127;
         *(static_cast<EbmlFloat *>(&GetChild<KaxVideoWhitePointChromaY>(MyColorMeta))) = 0.329;
-        *(static_cast<EbmlFloat *>(&GetChild<KaxVideoLuminanceMax>(MyColorMeta))) = maxL;
-        *(static_cast<EbmlFloat *>(&GetChild<KaxVideoLuminanceMin>(MyColorMeta))) = minL;
-        // -------------------------------------------------------------------------
+        *(static_cast<EbmlFloat *>(&GetChild<KaxVideoLuminanceMax>(MyColorMeta))) = 1000;
+        *(static_cast<EbmlFloat *>(&GetChild<KaxVideoLuminanceMin>(MyColorMeta))) = 0.01;
+        */
 
         MyTracks.Render(*m_file, m_writeDefaultValues);
 
@@ -246,11 +240,27 @@ void MkvInterface::close()
 
         uint64 origPos = m_file->getFilePointer();
         m_file->setFilePointer(MyInfos.GetElementPosition());
-        MyInfos.Render(*m_file);
+        MyInfos.Render(*m_file, m_writeDefaultValues);
         m_file->setFilePointer(origPos);
         
         // write the seek head
         m_dummy->ReplaceWith(*m_metaSeek, *m_file);
+
+        /*
+        KaxTags &tags = GetChild<KaxTags>(m_fileSegment);
+        KaxTag &tag = GetChild<KaxTag>(tags);
+
+        KaxTagTargets &targets = GetChild<KaxTagTargets>(tag);
+        *(static_cast<EbmlUInteger *>(&GetChild<KaxTagTargetTypeValue>(targets))) = 50;
+        *(static_cast<EbmlUInteger *>(&GetChild<KaxTagTrackUID>(targets))) = 13;
+        *(static_cast<EbmlString *>(&GetChild<KaxTagTargetType>(targets))) = "MOVIE";
+
+        KaxTagSimple &stag_l1 = GetChild<KaxTagSimple>(tag);
+        *(static_cast<EbmlUnicodeString *>(&GetChild<KaxTagName>(stag_l1))) = L"NUMBER_OF_FRAMES";
+        *(static_cast<EbmlUnicodeString *>(&GetChild<KaxTagString>(stag_l1))) = L"2";
+
+        tags.Render(*m_file, m_writeDefaultValues);
+        */
         
         m_file->setFilePointer(0, seek_end);
 	    if (m_fileSegment.ForceSize(m_file->getFilePointer() -

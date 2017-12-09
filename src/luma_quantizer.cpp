@@ -64,7 +64,7 @@ std::string LumaQuantizer::name(ptf_t ptf)
     switch (ptf)
     {
     case PTF_PQ:
-        name = "Perceptual quantizer (PQ)";
+        name = "Perceptual quantizer (PQ, SMPTE ST 2084)";
         break;
     case PTF_LOG:
         name = "Logarithmic";
@@ -98,7 +98,7 @@ std::string LumaQuantizer::name(colorSpace_t cs)
         name = "RGB";
         break;
     case CS_YCBCR:
-        name = "YCbCr";
+        name = "YCbCr (ITU-R BT.2020)";
         break;
     case CS_XYZ:
         name = "XYZ";
@@ -171,7 +171,7 @@ void LumaQuantizer::setMappingPsi()
 // Specify the quanizer to use, which includes ptf, color space and their respective bit depths
 void LumaQuantizer::setQuantizer(ptf_t ptf, unsigned int bitdepth,
                                  colorSpace_t cs, unsigned int bitdepthC,
-                                 float maxLum)
+                                 float maxLum, float minLum)
 {
     if (m_mapping != NULL)
         delete[] m_mapping;
@@ -182,6 +182,7 @@ void LumaQuantizer::setQuantizer(ptf_t ptf, unsigned int bitdepth,
     m_bitdepthColor = bitdepthC;
     m_maxValColor = (int)pow(2.0f,(float)bitdepthC)-1;
     m_Lmax = maxLum;
+    m_Lmin = minLum;
     
     m_mapping = new float[m_maxVal+1];
     
