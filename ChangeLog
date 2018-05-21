@@ -13,3 +13,6 @@ LumaHDRv 0.0.3 <09.12.2017>
       so that encoded HDR videos are compatible
       with e.g. Youtube and Vimeo, if encoded 
       using HDR10 specification.
+
+LumaHDRv 1.0.0 <21.05.2018>
+    * A first GitHub release
