@@ -4,8 +4,10 @@ project (LumaHDRv)
 option(BUILD_TEST_EXAMPLES
   "Build the simple test applications in ./test" ON)
 
-option(LINK_OPENEXR_DLL
-  "Dynamically link against OpenEXR libraries" OFF)
+if (MSVC)
+    option(LINK_OPENEXR_DLL
+      "Dynamically link against OpenEXR libraries" OFF)
+endif (MSVC)
 
 set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
 
