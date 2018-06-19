@@ -49,13 +49,21 @@
 #ifndef LUMA_DECODER_H
 #define LUMA_DECODER_H
 
+#ifdef _WINDOWS
+#ifdef luma_decoder_EXPORTS
+#define LUMA_DEC_EXPORT __declspec(dllexport)
+#else
+#define LUMA_DEC_EXPORT __declspec(dllimport)
+#endif
+#else
+#define LUMA_DEC_EXPORT
+#endif
+
 #include "luma_quantizer.h"
 #include "mkv_interface.h"
 
 #include "vpx_decoder.h"
 #include "vp8dx.h"
-
-#include <sys/time.h>
 
 struct LumaDecoderParamsBase
 {
@@ -78,7 +86,7 @@ struct LumaDecoderParamsBase
  *
  */
  
-class LumaDecoderBase
+class LUMA_DEC_EXPORT LumaDecoderBase
 {
 public:
     LumaDecoderBase(const char *inputFile = NULL, bool verbose = 0) : m_input(inputFile)
@@ -132,7 +140,7 @@ struct LumaDecoderParams : LumaDecoderParamsBase
  * Matroska container: http://www.matroska.org
  *
  */
-class LumaDecoder : public LumaDecoderBase
+class LUMA_DEC_EXPORT LumaDecoder : public LumaDecoderBase
 {
 public:
     LumaDecoder(const char *inputFile = NULL, bool verbose = 0);

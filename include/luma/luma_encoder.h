@@ -49,6 +49,16 @@
 #ifndef LUMA_ENCODER_H
 #define LUMA_ENCODER_H
 
+#ifdef _WINDOWS
+#ifdef luma_encoder_EXPORTS
+#define LUMA_ENC_EXPORT __declspec(dllexport)
+#else
+#define LUMA_ENC_EXPORT __declspec(dllimport)
+#endif
+#else
+#define LUMA_ENC_EXPORT
+#endif
+
 #include "luma_quantizer.h"
 #include "mkv_interface.h"
 #include "luma_frame.h"
@@ -78,7 +88,7 @@ struct LumaEncoderParamsBase
  * LumaEncoderBase provides the virtual interface for encoding of HDR video.
  *
  */
-class LumaEncoderBase
+class LUMA_ENC_EXPORT LumaEncoderBase
 {
 public:
     virtual bool initialize(const char *outputFile, 
@@ -130,7 +140,7 @@ struct LumaEncoderParams : LumaEncoderParamsBase
  * Matroska container: http://www.matroska.org
  *
  */
-class LumaEncoder : public LumaEncoderBase
+class LUMA_ENC_EXPORT LumaEncoder : public LumaEncoderBase
 {
 public:
     LumaEncoder();
