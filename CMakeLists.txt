@@ -4,6 +4,9 @@ project (LumaHDRv)
 option(BUILD_TEST_EXAMPLES
   "Build the simple test applications in ./test" ON)
 
+option(LINK_OPENEXR_DLL
+  "Dynamically link against OpenEXR libraries" OFF)
+
 set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
 
 if(APPLE)
@@ -209,6 +212,19 @@ if ( HAVE_OPENEXR )
         include_directories ("${PROJECT_SOURCE_DIR}/test")
         add_subdirectory (test)
     endif (BUILD_TEST_EXAMPLES)
+
+    if( LINK_OPENEXR_DLL )
+    
+        target_compile_definitions(lumaenc PRIVATE OPENEXR_DLL)
+        target_compile_definitions(lumadec PRIVATE OPENEXR_DLL)
+
+        if(BUILD_TEST_EXAMPLES)
+            target_compile_definitions(test_simple_enc PRIVATE OPENEXR_DLL)
+            target_compile_definitions(test_simple_dec PRIVATE OPENEXR_DLL)
+        endif(BUILD_TEST_EXAMPLES)
+
+    endif( LINK_OPENEXR_DLL )
+
 endif ( HAVE_OPENEXR )
 
 # lumaplay can only be built if OpenGL is found
