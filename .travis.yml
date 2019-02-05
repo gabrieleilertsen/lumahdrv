@@ -1,6 +1,10 @@
 language: cpp
 dist: xenial
 
+addons:
+  apt:
+    packages: cmake yasm
+
 script:
  - mkdir build
  - cd build
