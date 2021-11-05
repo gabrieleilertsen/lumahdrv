@@ -1,8 +1,8 @@
-# ![Luma HDRv](http://lumahdrv.org/img/logo_small.png) **Luma Hdrv**
-Project web: http://lumahdrv.org/
+# ![Luma HDRv](https://computergraphics.on.liu.se/lumahdrv/img/logo_small.png) **Luma Hdrv**
+Project web: https://computergraphics.on.liu.se/lumahdrv/
 
 ## General
-The [Luma HDRv](http://lumahdrv.org/) package provides libraries for
+The [Luma HDRv](https://computergraphics.on.liu.se/lumahdrv/) package provides libraries for
 encoding and decoding of HDR video sequences. The encoding is done 
 using the high bit depth profiles of google's [VP9 codec](http://www.webmproject.org).
 To be able to store HDR images with the limited bits available, 
@@ -200,4 +200,4 @@ All rights reserved.
 
 Luma HDRv is distributed under a BSD license. See `LICENSE` for information.
 
-![Luma HDRv](http://lumahdrv.org/img/quote_bg.jpg)
+![Luma HDRv](https://computergraphics.on.liu.se/lumahdrv/img/quote_bg.jpg)
